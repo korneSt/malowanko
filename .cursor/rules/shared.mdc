@@ -1,0 +1,45 @@
+---
+alwaysApply: true
+---
+
+# AI Rules for {{project-name}}
+
+Application for generating coloring books for children.
+
+## Tech Stack
+
+- Next.js 16
+- TypeScript
+- React 19
+- Tailwind CSS
+- Supabase
+- OpenAI API
+
+## Project Structure
+
+When introducing changes to the project, always follow the directory structure below:
+
+- `./src` - source code
+- `./app` - Next.js pages
+- `./components` - client-side components written in React (dynamic)
+- `./lib` - library functions
+- `./utils` - utility functions
+- `./types` - TypeScript types
+- `./hooks` - React hooks
+- `./styles` - CSS styles
+- `./public` - public assets
+
+When modifying the directory structure, always update this section.
+
+## Coding practices
+
+### Guidelines for clean code
+
+- Prioritize error handling and edge cases
+- Handle errors and edge cases at the beginning of functions.
+- Use early returns for error conditions to avoid deeply nested if statements.
+- Place the happy path last in the function for improved readability.
+- Avoid unnecessary else statements; use if-return pattern instead.
+- Use guard clauses to handle preconditions and invalid states early.
+- Implement proper error logging and user-friendly error messages.
+- Consider using custom error types or error factories for consistent error handling.

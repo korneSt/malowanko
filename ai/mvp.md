@@ -5,11 +5,6 @@ Rodzice i opiekunowie potrzebują spersonalizowanych kolorowanek dla dzieci, kt�
 ### Najmniejszy zestaw funkcjonalności
 
 1. **System autoryzacji**
-
-   - Rejestracja nowego użytkownika (email + hasło)
-   - Logowanie i wylogowanie
-   - Podstawowa sesja użytkownika
-
 2. **Generator kolorowanek**
 
    - Pole tekstowe do wpisania promptu (np. "dinozaur w dżungli")
@@ -23,22 +18,24 @@ Rodzice i opiekunowie potrzebują spersonalizowanych kolorowanek dla dzieci, kt�
    - Przeglądanie zapisanych kolorowanek
    - Usuwanie kolorowanek
 
-4. **System polubień**
+4. **Moduł drukowania**
 
-   - Możliwość polubienia kolorowanki
-   - Lista ulubionych kolorowanek
-
-5. **Moduł drukowania**
+   - Wybór kolorowanek do wydruku i ustalenie layoutu wydruku (poziomy, pionowy, układ kolorowanek)
    - Podgląd wydruku
    - Eksport do PDF w formacie A4
    - Bezpośredni wydruk z przeglądarki
+
+5. **Galeria publiczna**
+
+   - Wyszukiwanie kolorowanek po promptie, grupie wiekowej lub tagach
+   - Przeglądanie kolorowanek innych użytkowników
+   - Dodawanie kolorowanki do ulubionych
 
 ### Co NIE wchodzi w zakres MVP
 
 - ❌ Edytowanie wygenerowanych obrazków (przycinanie, obracanie, retusz)
 - ❌ System komentarzy i udostępniania społecznościowego
 - ❌ Content moderation (moderacja treści promptów i wyników)
-- ❌ Galeria publiczna z kolorowankami innych użytkowników
 - ❌ System płatności i subskrypcji
 - ❌ Aplikacja mobilna (tylko web)
 - ❌ Kolorowanie online (tylko wydruk)
@@ -47,5 +44,3 @@ Rodzice i opiekunowie potrzebują spersonalizowanych kolorowanek dla dzieci, kt�
 
 - ✅ **>70% wygenerowanych obrazków** jest zgodnych z tematem promptu i nadaje się do wydruku dla dzieci (czytelne linie, odpowiednia złożoność do wieku, brak nieodpowiednich treści)
 - ✅ Czas generowania kolorowanki < 30 sekund
-- ✅ Użytkownik może wygenerować, zapisać i wydrukować kolorowankę w < 3 minuty
-- ✅ Wydrukowany obrazek ma jakość min. 300 DPI
