@@ -57,23 +57,22 @@ Malowanko rozwiązuje te problemy poprzez:
 - FR-006: Użytkownik może wprowadzić tekstowy opis (prompt) kolorowanki
 - FR-007: Użytkownik może wybrać grupę wiekową: 3-5 lat, 6-8 lat, 9-12 lat
 - FR-008: Użytkownik może wybrać styl rysunku: Prosty, Klasyczny, Szczegółowy, Mandala
+- FR-008a: Użytkownik może wybrać liczbę obrazków do wygenerowania (1-5) dla jednego prompta
 - FR-009: System waliduje bezpieczeństwo promptu przez AI przed rozpoczęciem generowania
 - FR-010: System wyświetla przyjazny komunikat gdy prompt zawiera nieodpowiednie treści
 - FR-011: System generuje czarno-biały obrazek line art na podstawie promptu
 - FR-012: System automatycznie generuje 3-5 tagów dla wygenerowanej kolorowanki
-- FR-013: System ogranicza liczbę generowań do 10 dziennie z resetem o północy
+- FR-013: System ogranicza liczbę generowanych obrazków do 10 dziennie z resetem o północy (np. wygenerowanie 5 obrazków naraz zużywa 5 z limitu)
 - FR-014: System wyświetla licznik pozostałych generowań w interfejsie użytkownika
 - FR-015: Czas generowania kolorowanki nie przekracza 30 sekund
 
 ### 3.3 Biblioteka kolorowanek
 
 - FR-016: Użytkownik może zapisać wygenerowaną kolorowankę do biblioteki
-- FR-017: System ogranicza pojemność biblioteki do 100 kolorowanek
-- FR-018: System wyświetla ostrzeżenie gdy biblioteka osiąga 80% pojemności (80 kolorowanek)
-- FR-019: Użytkownik może przeglądać zapisane kolorowanki w bibliotece
-- FR-020: Użytkownik może usunąć kolorowankę z biblioteki
-- FR-021: Użytkownik może oznaczyć kolorowankę jako ulubioną (prywatne polubienie)
-- FR-023: System przechowuje metadane kolorowanki: prompt, tagi, data utworzenia, grupa wiekowa, styl
+- FR-017: Użytkownik może przeglądać zapisane kolorowanki w bibliotece
+- FR-018: Użytkownik może usunąć kolorowankę z biblioteki
+- FR-019: Użytkownik może oznaczyć kolorowankę jako ulubioną (prywatne polubienie)
+- FR-020: System przechowuje metadane kolorowanki: prompt, tagi, data utworzenia, grupa wiekowa, styl
 
 ### 3.4 Moduł drukowania
 
@@ -106,10 +105,11 @@ Malowanko rozwiązuje te problemy poprzez:
 
 - Autoryzacja wyłącznie przez magic link (e-mail)
 - Generator kolorowanek z 4 stylami i 3 grupami wiekowymi
-- Biblioteka osobista z limitem 100 kolorowanek
+- Możliwość wygenerowania 1-5 obrazków dla jednego prompta
+- Biblioteka osobista do przechowywania kolorowanek
 - Drukowanie i eksport do PDF w formacie A4
 - Galeria publiczna z wyszukiwaniem i filtrowaniem
-- Limit 10 generowań dziennie
+- Limit 10 obrazków dziennie (niezależnie od liczby generowań)
 - Wszystkie kolorowanki domyślnie publiczne i anonimowe
 - Responsywny interfejs web (mobile i desktop)
 
@@ -233,11 +233,30 @@ Kryteria akceptacji:
 - Interfejs generatora zawiera pole tekstowe na prompt
 - Interfejs zawiera wybór grupy wiekowej: 3-5 lat, 6-8 lat, 9-12 lat
 - Interfejs zawiera wybór stylu: Prosty, Klasyczny, Szczegółowy, Mandala
+- Interfejs zawiera wybór liczby obrazków do wygenerowania (1-5)
+- Domyślnie wybrana jest opcja 1 obrazek
 - Przycisk "Generuj" jest aktywny gdy wszystkie pola są wypełnione
 - System wyświetla wskaźnik postępu podczas generowania
-- Wygenerowany obrazek jest wyświetlany jako podgląd
-- Obrazek jest w formacie line art (czarno-biały)
-- Czas generowania nie przekracza 30 sekund
+- Wygenerowane obrazki są wyświetlane jako podgląd (siatka lub karuzela dla wielu obrazków)
+- Obrazki są w formacie line art (czarno-biały)
+- Czas generowania nie przekracza 30 sekund na obrazek
+
+---
+
+ID: US-006a
+Tytuł: Wybór liczby obrazków do wygenerowania
+
+Opis: Jako rodzic, chcę wybrać ile wariantów kolorowanki chcę wygenerować na podstawie jednego opisu, aby mieć większy wybór lub zaoszczędzić czas.
+
+Kryteria akceptacji:
+
+- Interfejs zawiera kontrolkę do wyboru liczby obrazków (1-5)
+- Domyślnie wybrana jest wartość 1
+- Przy wyborze większej liczby system informuje ile obrazków zostanie zużytych z dziennego limitu
+- Jeśli pozostały limit jest mniejszy niż wybrana liczba, opcje powyżej limitu są nieaktywne
+- Po wygenerowaniu wszystkie obrazki są wyświetlane jako podgląd
+- Użytkownik może zapisać wybrane obrazki lub wszystkie naraz
+- Każdy wygenerowany obrazek ma te same metadane (prompt, tagi, grupa wiekowa, styl)
 
 ---
 
@@ -294,9 +313,10 @@ Opis: Jako użytkownik, chcę widzieć ile kolorowanek mogę jeszcze wygenerowa�
 
 Kryteria akceptacji:
 
-- Licznik pozostałych generowań jest widoczny w interfejsie generatora
-- Limit wynosi 10 generowań dziennie
-- Licznik aktualizuje się po każdym wygenerowaniu
+- Licznik pozostałych obrazków do wygenerowania jest widoczny w interfejsie generatora
+- Limit wynosi 10 obrazków dziennie
+- Licznik aktualizuje się po każdym wygenerowaniu (np. wygenerowanie 3 obrazków zmniejsza licznik o 3)
+- Wybór liczby obrazków jest ograniczony do pozostałego limitu (np. jeśli pozostały 3 obrazki, można wybrać max 3)
 - Limit resetuje się o północy
 - Przy osiągnięciu limitu system wyświetla przyjazny komunikat
 - Komunikat informuje o czasie do resetu limitu
@@ -319,32 +339,32 @@ Kryteria akceptacji:
 ---
 
 ID: US-012
-Tytuł: Zapisanie wygenerowanej kolorowanki
+Tytuł: Zapisanie wygenerowanych kolorowanek
 
-Opis: Jako rodzic, chcę zapisać wygenerowaną kolorowankę do mojej biblioteki, aby móc ją później wydrukować lub pokazać dziecku.
+Opis: Jako rodzic, chcę zapisać wygenerowane kolorowanki do mojej biblioteki, aby móc je później wydrukować lub pokazać dziecku.
 
 Kryteria akceptacji:
 
-- Po wygenerowaniu widoczny jest przycisk "Zapisz do biblioteki"
-- Kliknięcie przycisku zapisuje kolorowankę z wszystkimi metadanymi
-- System wyświetla potwierdzenie zapisania
-- Kolorowanka pojawia się w bibliotece użytkownika
-- Jeśli biblioteka jest pełna, system wyświetla stosowny komunikat
+- Po wygenerowaniu widoczny jest przycisk "Zapisz do biblioteki" przy każdym obrazku
+- Dla wielu obrazków dostępna jest opcja "Zapisz wszystkie" oraz możliwość wyboru pojedynczych
+- Kliknięcie przycisku zapisuje kolorowankę/kolorowanki z wszystkimi metadanymi
+- System wyświetla potwierdzenie zapisania z informacją ile kolorowanek zostało zapisanych
+- Kolorowanki pojawiają się w bibliotece użytkownika
 
 ---
 
 ID: US-013
-Tytuł: Ponowne generowanie kolorowanki
+Tytuł: Ponowne generowanie kolorowanek
 
-Opis: Jako rodzic niezadowolony z wygenerowanego obrazka, chcę móc wygenerować nową wersję bez zmiany parametrów.
+Opis: Jako rodzic niezadowolony z wygenerowanych obrazków, chcę móc wygenerować nowe wersje bez zmiany parametrów.
 
 Kryteria akceptacji:
 
 - Przycisk "Generuj ponownie" jest dostępny po wygenerowaniu
-- Kliknięcie generuje nowy obrazek z tymi samymi parametrami
-- Poprzedni obrazek jest zastępowany nowym
-- Generowanie zużywa 1 z dziennego limitu
-- Użytkownik może edytować prompt przed ponownym generowaniem
+- Kliknięcie generuje nowe obrazki z tymi samymi parametrami (w tym liczbą obrazków)
+- Poprzednie obrazki są zastępowane nowymi
+- Generowanie zużywa tyle z dziennego limitu ile obrazków jest generowanych
+- Użytkownik może edytować prompt i liczbę obrazków przed ponownym generowaniem
 
 ---
 
@@ -362,7 +382,6 @@ Kryteria akceptacji:
 - Biblioteka wyświetla miniatury zapisanych kolorowanek
 - Każda miniatura pokazuje podstawowe informacje (prompt, data)
 - Kolorowanki są posortowane od najnowszych
-- Widoczna jest liczba zapisanych kolorowanek i limit (np. 45/100)
 - Kliknięcie miniatury otwiera podgląd kolorowanki
 
 ---
@@ -384,34 +403,19 @@ Kryteria akceptacji:
 ID: US-016
 Tytuł: Usuwanie kolorowanki z biblioteki
 
-Opis: Jako rodzic, chcę móc usunąć niechciane kolorowanki z biblioteki, aby zrobić miejsce na nowe.
+Opis: Jako rodzic, chcę móc usunąć niechciane kolorowanki z biblioteki, aby utrzymać porządek w mojej kolekcji.
 
 Kryteria akceptacji:
 
 - Przycisk usuwania jest dostępny w podglądzie kolorowanki
 - System wyświetla potwierdzenie przed usunięciem
 - Potwierdzenie zawiera miniaturę kolorowanki do usunięcia
-- Po potwierdzeniu kolorowanka jest trwale usuwana
-- Licznik biblioteki jest aktualizowany po usunięciu
+- Po potwierdzeniu kolorowanka jest trwale usuwana z biblioteki użytkownika
 - Kolorowanka pozostaje w galerii publicznej (jest anonimowa)
 
 ---
 
 ID: US-017
-Tytuł: Ostrzeżenie o zbliżającym się limicie biblioteki
-
-Opis: Jako rodzic zbliżający się do limitu biblioteki, chcę otrzymać ostrzeżenie, abym mógł zarządzać swoją kolekcją.
-
-Kryteria akceptacji:
-
-- System wyświetla ostrzeżenie gdy biblioteka osiąga 80 kolorowanek (80%)
-- Ostrzeżenie jest widoczne w widoku biblioteki
-- Ostrzeżenie można zamknąć, ale pojawia się ponownie przy kolejnej wizycie
-- Przy 100 kolorowankach zapisywanie nowych jest blokowane
-
----
-
-ID: US-019
 Tytuł: Oznaczanie kolorowanki jako ulubionej
 
 Opis: Jako rodzic, chcę oznaczać najlepsze kolorowanki jako ulubione, aby łatwo je później znaleźć.
