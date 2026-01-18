@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { Loader2, CheckCircle2, AlertCircle, Send } from "lucide-react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { Loader2, CheckCircle2, AlertCircle, Send, KeyRound } from "lucide-react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { EmailInput } from "./EmailInput";
 import { AuthModeToggle } from "./AuthModeToggle";
 import {
@@ -15,6 +18,7 @@ import {
   type AuthMode,
   type AuthErrorType,
 } from "@/src/lib/validations/auth";
+import { signUp, signIn, verifyOtpCode } from "@/src/lib/actions/auth";
 
 // ============================================================================
 // Types
@@ -33,13 +37,15 @@ interface AuthFormProps {
   className?: string;
 }
 
-type FormStatus = "idle" | "loading" | "success" | "error";
+type FormStatus = "idle" | "loading" | "success" | "error" | "verifying";
 
 interface FormState {
   email: string;
   mode: AuthMode;
   status: FormStatus;
   error: string | null;
+  otpCode: string;
+  otpError: string | null;
 }
 
 // ============================================================================
@@ -58,8 +64,9 @@ const SUBMIT_BUTTON_LABELS: Record<AuthMode, string> = {
 
 const SUCCESS_MESSAGES = {
   title: "Sprawdź swoją skrzynkę e-mail",
-  description: "Wysłaliśmy link do logowania na podany adres e-mail. Kliknij link w e-mailu, aby zalogować się do aplikacji.",
-  note: "Link jest ważny przez 1 godzinę.",
+  description: "Wysłaliśmy link i kod weryfikacyjny na podany adres e-mail.",
+  instruction: "Kliknij link w e-mailu lub wpisz 6-cyfrowy kod poniżej:",
+  note: "Kod jest ważny przez 1 godzinę.",
 };
 
 // ============================================================================
@@ -73,12 +80,17 @@ export function AuthForm({
   error: initialError,
   className,
 }: AuthFormProps) {
+  const router = useRouter();
+  const otpInputRef = useRef<HTMLInputElement>(null);
+
   // Form state
   const [formState, setFormState] = useState<FormState>({
     email: initialEmail,
     mode: initialMode,
     status: "idle",
     error: null,
+    otpCode: "",
+    otpError: null,
   });
 
   // Validation state
@@ -95,6 +107,13 @@ export function AuthForm({
       }));
     }
   }, [initialError]);
+
+  // Focus OTP input when entering success state
+  useEffect(() => {
+    if (formState.status === "success" && otpInputRef.current) {
+      otpInputRef.current.focus();
+    }
+  }, [formState.status]);
 
   // Handlers
   const handleEmailChange = useCallback((value: string) => {
@@ -141,18 +160,57 @@ export function AuthForm({
       setFormState((prev) => ({ ...prev, status: "loading" }));
 
       try {
-        // TODO: Implement actual Server Actions
-        // For now, simulate a successful response after a delay
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        // Call the appropriate Server Action based on mode
+        const result = formState.mode === "signup"
+          ? await signUp(formState.email, redirectTo)
+          : await signIn(formState.email, redirectTo);
 
-        // Placeholder for Server Action call:
-        // const result = formState.mode === 'signup'
-        //   ? await signUp(formState.email, redirectTo)
-        //   : await signIn(formState.email, redirectTo);
-        //
-        // if (!result.success) {
-        //   throw new Error(result.error || 'Wystąpił błąd');
-        // }
+        if (!result.success) {
+          // Handle automatic mode switching (US-005)
+          // If account doesn't exist during login -> switch to signup
+          if (result.errorCode === "account_not_found") {
+            setFormState((prev) => ({
+              ...prev,
+              mode: "signup",
+              status: "error",
+              error: result.error || "Konto nie istnieje",
+            }));
+            toast.error("Konto nie istnieje", {
+              description: "Przełączono na tryb rejestracji.",
+            });
+            return;
+          }
+
+          // If account exists during signup -> switch to signin
+          if (result.errorCode === "account_exists") {
+            setFormState((prev) => ({
+              ...prev,
+              mode: "signin",
+              status: "error",
+              error: result.error || "Konto już istnieje",
+            }));
+            toast.error("Konto już istnieje", {
+              description: "Przełączono na tryb logowania.",
+            });
+            return;
+          }
+
+          // Handle rate limiting
+          if (result.errorCode === "rate_limit") {
+            setFormState((prev) => ({
+              ...prev,
+              status: "error",
+              error: result.error || "Zbyt wiele prób",
+            }));
+            toast.error("Zbyt wiele prób", {
+              description: "Spróbuj ponownie za kilka minut.",
+            });
+            return;
+          }
+
+          // Handle other errors
+          throw new Error(result.error || "Wystąpił błąd");
+        }
 
         // Success state
         setFormState((prev) => ({
@@ -162,7 +220,7 @@ export function AuthForm({
         }));
 
         toast.success("Link wysłany!", {
-          description: "Sprawdź swoją skrzynkę e-mail.",
+          description: result.message || "Sprawdź swoją skrzynkę e-mail.",
         });
       } catch (err) {
         const errorMessage =
@@ -189,16 +247,87 @@ export function AuthForm({
       ...prev,
       status: "idle",
       error: null,
+      otpCode: "",
+      otpError: null,
     }));
   }, []);
+
+  const handleOtpChange = useCallback((value: string) => {
+    // Only allow digits and max 6 characters
+    const sanitized = value.replace(/\D/g, "").slice(0, 6);
+    setFormState((prev) => ({
+      ...prev,
+      otpCode: sanitized,
+      otpError: null,
+    }));
+  }, []);
+
+  const handleOtpSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+
+      // Validate OTP code
+      if (formState.otpCode.length !== 6) {
+        setFormState((prev) => ({
+          ...prev,
+          otpError: "Kod musi składać się z 6 cyfr",
+        }));
+        return;
+      }
+
+      // Set verifying state
+      setFormState((prev) => ({ ...prev, status: "verifying", otpError: null }));
+
+      try {
+        const result = await verifyOtpCode(formState.email, formState.otpCode);
+
+        if (!result.success) {
+          setFormState((prev) => ({
+            ...prev,
+            status: "success", // Stay in success state to allow retry
+            otpError: result.error || "Nieprawidłowy kod",
+          }));
+          toast.error("Błąd weryfikacji", {
+            description: result.error || "Nieprawidłowy kod",
+          });
+          return;
+        }
+
+        // Success - redirect
+        toast.success("Zalogowano pomyślnie!", {
+          description: "Przekierowujemy do aplikacji...",
+        });
+
+        // Redirect to target page
+        router.push(result.redirectTo || redirectTo || "/galeria");
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : "Wystąpił nieoczekiwany błąd. Spróbuj ponownie.";
+
+        setFormState((prev) => ({
+          ...prev,
+          status: "success",
+          otpError: errorMessage,
+        }));
+
+        toast.error("Błąd", {
+          description: errorMessage,
+        });
+      }
+    },
+    [formState.email, formState.otpCode, redirectTo, router]
+  );
 
   // Derived state
   const isLoading = formState.status === "loading";
   const isSuccess = formState.status === "success";
-  const isDisabled = isLoading || isSuccess;
+  const isVerifying = formState.status === "verifying";
+  const isDisabled = isLoading || isSuccess || isVerifying;
 
-  // Render success state
-  if (isSuccess) {
+  // Render success state with OTP input
+  if (isSuccess || isVerifying) {
     return (
       <Card className={cn("shadow-sm", className)}>
         <CardContent className="pt-6">
@@ -214,23 +343,88 @@ export function AuthForm({
               <p className="text-sm text-muted-foreground">
                 {SUCCESS_MESSAGES.description}
               </p>
-              <p className="text-xs text-muted-foreground">
-                {SUCCESS_MESSAGES.note}
+              <p className="text-sm text-muted-foreground">
+                {SUCCESS_MESSAGES.instruction}
               </p>
             </div>
-            <div className="pt-2 text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground">
               <span>Wysłano na: </span>
               <span className="font-medium text-foreground">
                 {formState.email}
               </span>
             </div>
-            <Button
-              variant="outline"
-              onClick={handleRetry}
-              className="mt-4"
-            >
-              Wyślij ponownie
-            </Button>
+
+            {/* OTP Code Input */}
+            <form onSubmit={handleOtpSubmit} className="w-full max-w-xs space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="otp-code" className="sr-only">
+                  Kod weryfikacyjny
+                </Label>
+                <Input
+                  ref={otpInputRef}
+                  id="otp-code"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  placeholder="000000"
+                  value={formState.otpCode}
+                  onChange={(e) => handleOtpChange(e.target.value)}
+                  disabled={isVerifying}
+                  className={cn(
+                    "text-center text-2xl font-mono tracking-[0.5em] h-14",
+                    formState.otpError && "border-destructive focus-visible:ring-destructive"
+                  )}
+                  aria-describedby={formState.otpError ? "otp-error" : undefined}
+                  aria-invalid={!!formState.otpError}
+                />
+                {formState.otpError && (
+                  <p
+                    id="otp-error"
+                    className="flex items-center gap-1.5 text-sm text-destructive"
+                    role="alert"
+                  >
+                    <AlertCircle className="size-4" aria-hidden="true" />
+                    {formState.otpError}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {SUCCESS_MESSAGES.note}
+                </p>
+              </div>
+
+              <Button
+                type="submit"
+                size="lg"
+                disabled={isVerifying || formState.otpCode.length !== 6}
+                className="w-full gap-2"
+              >
+                {isVerifying ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                    Weryfikowanie...
+                  </>
+                ) : (
+                  <>
+                    <KeyRound className="size-4" aria-hidden="true" />
+                    Zweryfikuj kod
+                  </>
+                )}
+              </Button>
+            </form>
+
+            <div className="flex items-center gap-2 pt-2">
+              <span className="text-sm text-muted-foreground">Nie otrzymałeś kodu?</span>
+              <Button
+                variant="link"
+                size="sm"
+                onClick={handleRetry}
+                disabled={isVerifying}
+                className="h-auto p-0"
+              >
+                Wyślij ponownie
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

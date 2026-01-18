@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { LoadingSpinner } from "@/components/shared";
+
+import { verifyMagicLink } from "@/src/lib/actions/auth";
 
 interface VerifyPageProps {
   searchParams: Promise<{
@@ -9,44 +10,62 @@ interface VerifyPageProps {
   }>;
 }
 
+/**
+ * Maps internal error codes to query param error codes.
+ * This ensures consistency with the AuthForm error handling.
+ */
+function mapErrorCodeToQueryParam(
+  errorCode: "expired" | "invalid" | "used" | undefined
+): "expired" | "invalid_token" | "verification_failed" {
+  switch (errorCode) {
+    case "expired":
+      return "expired";
+    case "invalid":
+    case "used":
+      return "invalid_token";
+    default:
+      return "verification_failed";
+  }
+}
+
+/**
+ * Strona weryfikacji magic linka.
+ * 
+ * Spełnia wymagania US-001, US-002, US-004:
+ * - Weryfikuje token magic linka
+ * - Przekierowuje na docelową stronę po udanej weryfikacji
+ * - Obsługuje wygasłe linki (US-004) z odpowiednim komunikatem
+ * - Obsługuje nieprawidłowe tokeny
+ */
 export default async function VerifyPage({ searchParams }: VerifyPageProps) {
   const params = await searchParams;
   const { token_hash, type, redirect: redirectTo } = params;
 
-  // Brak wymaganych parametrów - przekieruj do /auth z błędem
-  if (!token_hash || !type) {
+  // Helper function to build error redirect URL
+  const buildErrorUrl = (error: string) => {
     const errorUrl = new URL("/auth", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
-    errorUrl.searchParams.set("error", "invalid_token");
+    errorUrl.searchParams.set("error", error);
     if (redirectTo) {
       errorUrl.searchParams.set("redirect", redirectTo);
     }
-    redirect(errorUrl.pathname + errorUrl.search);
+    return errorUrl.pathname + errorUrl.search;
+  };
+
+  // Missing required parameters - redirect to /auth with error
+  if (!token_hash || !type) {
+    redirect(buildErrorUrl("invalid_token"));
   }
 
-  // TODO: Implementacja weryfikacji magic linka przez Server Action
-  // const result = await verifyMagicLink(token_hash, type);
-  //
-  // if (!result.success) {
-  //   const errorUrl = new URL("/auth", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
-  //   errorUrl.searchParams.set("error", result.errorCode || "verification_failed");
-  //   if (redirectTo) {
-  //     errorUrl.searchParams.set("redirect", redirectTo);
-  //   }
-  //   redirect(errorUrl.pathname + errorUrl.search);
-  // }
-  //
-  // redirect(result.redirectTo || redirectTo || "/galeria");
+  // Verify the magic link using the Server Action
+  const result = await verifyMagicLink(token_hash, type);
 
-  // Tymczasowy UI podczas ładowania (do czasu implementacji backendu)
-  return (
-    <div className="flex flex-col items-center justify-center space-y-4 rounded-2xl bg-card p-8 text-center shadow-sm">
-      <LoadingSpinner size="lg" />
-      <div className="space-y-2">
-        <h1 className="text-xl font-semibold">Weryfikowanie linku...</h1>
-        <p className="text-sm text-muted-foreground">
-          Proszę czekać, trwa weryfikacja Twojego linku logowania.
-        </p>
-      </div>
-    </div>
-  );
+  if (!result.success) {
+    // Map the error code and redirect to auth page with error
+    const queryError = mapErrorCodeToQueryParam(result.errorCode);
+    redirect(buildErrorUrl(queryError));
+  }
+
+  // Successful verification - redirect to target page
+  // Priority: result.redirectTo > redirectTo from query > default "/galeria"
+  redirect(result.redirectTo || redirectTo || "/galeria");
 }
