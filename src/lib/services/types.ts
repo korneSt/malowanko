@@ -23,6 +23,10 @@ export interface PromptSafetyResult {
 export interface ImageGenerationResult {
   /** Raw PNG image data as Buffer */
   imageData: Buffer;
+  /** Base64 encoded image data (for direct storage) */
+  imageBase64: string;
+  /** MIME type of the image (e.g., "image/png") */
+  mimeType: string;
   /** Revised prompt returned by DALL-E (if any) */
   revisedPrompt?: string;
 }

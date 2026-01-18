@@ -158,7 +158,7 @@ export async function generateColorings(
     });
 
     // =========================================================================
-    // 6. UPLOAD IMAGES AND SAVE TO DATABASE
+    // 6. SAVE IMAGES AS BASE64 AND SAVE TO DATABASE
     // Use admin client to bypass RLS for server-side operations
     // =========================================================================
     const adminClient = createAdminClient();
@@ -166,30 +166,36 @@ export async function generateColorings(
 
     for (const image of images) {
       const coloringId = crypto.randomUUID();
-      const storagePath = `${userId}/${coloringId}.png`;
+      // const storagePath = `${userId}/${coloringId}.png`;
 
+      // =======================================================================
+      // STORAGE UPLOAD COMMENTED OUT - Testing base64 storage
+      // =======================================================================
       // Upload image to Supabase Storage (using admin client to bypass RLS)
-      const { error: uploadError } = await adminClient.storage
-        .from("colorings")
-        .upload(storagePath, image.imageData, {
-          contentType: "image/png",
-          cacheControl: "31536000", // 1 year cache
-          upsert: false,
-        });
+      // const { error: uploadError } = await adminClient.storage
+      //   .from("colorings")
+      //   .upload(storagePath, image.imageData, {
+      //     contentType: "image/png",
+      //     cacheControl: "31536000", // 1 year cache
+      //     upsert: false,
+      //   });
 
-      if (uploadError) {
-        logger.error("Storage upload failed", {
-          userId,
-          coloringId,
-          error: uploadError.message,
-        });
-        throw new Error(`Upload failed: ${uploadError.message}`);
-      }
+      // if (uploadError) {
+      //   logger.error("Storage upload failed", {
+      //     userId,
+      //     coloringId,
+      //     error: uploadError.message,
+      //   });
+      //   throw new Error(`Upload failed: ${uploadError.message}`);
+      // }
 
       // Get public URL for the uploaded image
-      const {
-        data: { publicUrl },
-      } = adminClient.storage.from("colorings").getPublicUrl(storagePath);
+      // const {
+      //   data: { publicUrl },
+      // } = adminClient.storage.from("colorings").getPublicUrl(storagePath);
+
+      // Convert base64 to data URL format for direct storage
+      const dataUrl = `data:${image.mimeType};base64,${image.imageBase64}`;
 
       // Insert coloring record into database (using admin client to bypass RLS)
       const { data: coloring, error: dbError } = await adminClient
@@ -197,7 +203,7 @@ export async function generateColorings(
         .insert({
           id: coloringId,
           user_id: userId,
-          image_url: publicUrl,
+          image_url: dataUrl, // Save base64 data URL directly
           prompt,
           tags,
           age_group: ageGroup,
@@ -207,8 +213,11 @@ export async function generateColorings(
         .single();
 
       if (dbError) {
+        // =====================================================================
+        // STORAGE ROLLBACK COMMENTED OUT - No storage to rollback
+        // =====================================================================
         // Rollback: remove uploaded image
-        await adminClient.storage.from("colorings").remove([storagePath]);
+        // await adminClient.storage.from("colorings").remove([storagePath]);
 
         logger.error("Database insert failed", {
           userId,

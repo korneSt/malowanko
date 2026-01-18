@@ -105,7 +105,7 @@ export async function generateColoringImage(
   try {
     const result = await generateImage({ prompt: fullPrompt });
 
-    // Convert base64 to Buffer
+    // Convert base64 to Buffer (for backward compatibility)
     const imageData = Buffer.from(result.imageBase64, "base64");
 
     logger.info("Image generated successfully", {
@@ -115,6 +115,8 @@ export async function generateColoringImage(
 
     return {
       imageData,
+      imageBase64: result.imageBase64, // Include base64 string for direct storage
+      mimeType: result.mimeType,
       revisedPrompt: fullPrompt,
     };
   } catch (error) {

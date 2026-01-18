@@ -59,7 +59,7 @@ export function ColoringCard({
   animate = false,
   className,
 }: ColoringCardProps) {
-  const [isImageLoading, setIsImageLoading] = useState(true);
+  const [isImageLoading, setIsImageLoading] = useState(false);
 
   const handleClick = () => {
     if (variant === "generated" && onSelect) {
@@ -137,8 +137,8 @@ export function ColoringCard({
         {isImageLoading && (
           <div className="absolute inset-0 animate-pulse bg-muted" />
         )}
-
-        <Image
+      <img src={coloring.imageUrl} alt={coloring.prompt} className="object-cover transition-all duration-300 group-hover:scale-105" />
+        {/* <Image
           src={coloring.imageUrl}
           alt={coloring.prompt}
           fill
@@ -149,7 +149,7 @@ export function ColoringCard({
             { "opacity-0": isImageLoading, "opacity-100": !isImageLoading }
           )}
           onLoad={() => setIsImageLoading(false)}
-        />
+        /> */}
 
         {/* Hover Overlay */}
         <div
