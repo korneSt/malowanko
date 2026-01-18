@@ -282,24 +282,28 @@ execute function add_coloring_to_library();
 -- Function: handle_new_user
 -- Purpose: Creates a profile record when a new user registers via Supabase Auth
 -- Triggered by: INSERT on auth.users table
+-- Note: Uses security definer with empty search_path as per Supabase best practices
+--       See: https://supabase.com/docs/guides/auth/managing-user-data
 -- ----------------------------------------------------------------------------
-create or replace function handle_new_user()
-returns trigger as $$
+create or replace function public.handle_new_user()
+returns trigger
+set search_path = ''
+as $$
 begin
     -- Create a profile for the newly registered user
-    insert into profiles (id, email, created_at)
+    insert into public.profiles (id, email, created_at)
     values (new.id, new.email, now());
     return new;
 end;
 $$ language plpgsql security definer;
 
-comment on function handle_new_user() is 'Trigger function to auto-create profile on user registration';
+comment on function public.handle_new_user() is 'Trigger function to auto-create profile on user registration';
 
 -- Trigger to call handle_new_user on auth.users insert
 create trigger on_auth_user_created
 after insert on auth.users
 for each row
-execute function handle_new_user();
+execute function public.handle_new_user();
 
 -- ============================================================================
 -- SECTION 4: ROW LEVEL SECURITY POLICIES

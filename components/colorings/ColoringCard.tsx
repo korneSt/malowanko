@@ -1,0 +1,203 @@
+"use client";
+
+import { useState } from "react";
+import Image from "next/image";
+import { Heart, Check } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import type { ColoringDTO } from "@/app/types";
+
+// ============================================================================
+// Types
+// ============================================================================
+
+interface ColoringCardProps {
+  /** Coloring data to display */
+  coloring: ColoringDTO;
+  /** Card variant determines available actions */
+  variant: "gallery" | "library" | "generated";
+  /** Whether the card is selected (for generated variant) */
+  isSelected?: boolean;
+  /** Callback when selection changes (for generated variant) */
+  onSelect?: (selected: boolean) => void;
+  /** Callback when card is clicked (for preview) */
+  onClick?: () => void;
+  /** Whether the card should animate on mount */
+  animate?: boolean;
+  /** Additional CSS classes */
+  className?: string;
+}
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+const AGE_GROUP_LABELS: Record<string, string> = {
+  "0-3": "0-3 lata",
+  "4-8": "4-8 lat",
+  "9-12": "9-12 lat",
+};
+
+const STYLE_LABELS: Record<string, string> = {
+  prosty: "Prosty",
+  klasyczny: "Klasyczny",
+  szczegolowy: "Szczegółowy",
+  mandala: "Mandala",
+};
+
+// ============================================================================
+// Component
+// ============================================================================
+
+export function ColoringCard({
+  coloring,
+  variant,
+  isSelected = false,
+  onSelect,
+  onClick,
+  animate = false,
+  className,
+}: ColoringCardProps) {
+  const [isImageLoading, setIsImageLoading] = useState(true);
+
+  const handleClick = () => {
+    if (variant === "generated" && onSelect) {
+      onSelect(!isSelected);
+    } else if (onClick) {
+      onClick();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleClick();
+    }
+  };
+
+  // Truncate prompt for display
+  const truncatedPrompt =
+    coloring.prompt.length > 60
+      ? coloring.prompt.slice(0, 60) + "..."
+      : coloring.prompt;
+
+  // Get max 3 tags for display
+  const displayTags = coloring.tags.slice(0, 3);
+
+  return (
+    <article
+      role={variant === "generated" ? "checkbox" : "button"}
+      aria-checked={variant === "generated" ? isSelected : undefined}
+      aria-label={`Kolorowanka: ${coloring.prompt}`}
+      tabIndex={0}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      className={cn(
+        "group relative cursor-pointer overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300",
+        "hover:border-primary/30 hover:shadow-lg",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        {
+          "ring-2 ring-primary ring-offset-2": isSelected,
+          "animate-in fade-in-0 zoom-in-95 duration-500": animate,
+        },
+        className
+      )}
+    >
+      {/* Selection Checkbox Overlay (for generated variant) */}
+      {variant === "generated" && (
+        <div
+          className={cn(
+            "absolute left-3 top-3 z-10 flex size-6 items-center justify-center rounded-full border-2 transition-all",
+            {
+              "border-primary bg-primary text-primary-foreground": isSelected,
+              "border-white/80 bg-black/20 backdrop-blur-sm": !isSelected,
+            }
+          )}
+          aria-hidden="true"
+        >
+          {isSelected && <Check className="size-4" />}
+        </div>
+      )}
+
+      {/* Favorites Count (for gallery variant) */}
+      {variant === "gallery" && coloring.favoritesCount > 0 && (
+        <div
+          className="absolute right-3 top-3 z-10 flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm"
+          aria-label={`${coloring.favoritesCount} polubień`}
+        >
+          <Heart className="size-3 fill-current" aria-hidden="true" />
+          <span>{coloring.favoritesCount}</span>
+        </div>
+      )}
+
+      {/* Image Container */}
+      <div className="relative aspect-square overflow-hidden bg-muted">
+        {/* Loading Skeleton */}
+        {isImageLoading && (
+          <div className="absolute inset-0 animate-pulse bg-muted" />
+        )}
+
+        <Image
+          src={coloring.imageUrl}
+          alt={coloring.prompt}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          className={cn(
+            "object-cover transition-all duration-300",
+            "group-hover:scale-105",
+            { "opacity-0": isImageLoading, "opacity-100": !isImageLoading }
+          )}
+          onLoad={() => setIsImageLoading(false)}
+        />
+
+        {/* Hover Overlay */}
+        <div
+          className={cn(
+            "absolute inset-0 flex items-center justify-center bg-black/0 transition-colors",
+            "group-hover:bg-black/10"
+          )}
+          aria-hidden="true"
+        />
+      </div>
+
+      {/* Content */}
+      <div className="space-y-2 p-3">
+        {/* Prompt */}
+        <p
+          className="line-clamp-2 text-sm font-medium leading-snug"
+          title={coloring.prompt}
+        >
+          {truncatedPrompt}
+        </p>
+
+        {/* Tags */}
+        {displayTags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {displayTags.map((tag) => (
+              <Badge
+                key={tag}
+                variant="outline"
+                className="text-xs font-normal"
+              >
+                {tag}
+              </Badge>
+            ))}
+            {coloring.tags.length > 3 && (
+              <Badge variant="outline" className="text-xs font-normal">
+                +{coloring.tags.length - 3}
+              </Badge>
+            )}
+          </div>
+        )}
+
+        {/* Metadata Row */}
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>{AGE_GROUP_LABELS[coloring.ageGroup]}</span>
+          <span>{STYLE_LABELS[coloring.style]}</span>
+        </div>
+      </div>
+    </article>
+  );
+}
+

@@ -1,3 +1,22 @@
 ---
-alwaysApply: true
+description: Rules for backend development and server actions
+alwaysApply: false
 ---
+
+# Backend Development Rules
+
+## Server Actions
+
+- Use Zod for validation of input data.
+- Always use Server Actions for mutations and data fetching.
+- Always use Server Components for data fetching.
+- Always use Server Actions for mutations and data fetching.
+
+## Supabase
+
+- Always use Supabase for database operations.
+- Always use Supabase Auth for authentication.
+- Always use Supabase Storage for file storage.
+- Always use Supabase Realtime for real-time updates.
+- Always use Supabase Edge Functions for serverless functions.
+- Always use Supabase Edge Functions for serverless functions.
