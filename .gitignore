@@ -3,15 +3,21 @@
 # dependencies
 /node_modules
 /.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+.pnp.js
+.yarn/install-state.gz
 
 # testing
 /coverage
+/.nyc_output
+/playwright-report
+/test-results
+/playwright/.cache
+e2e/screenshots/
+.vitest
+/.nyc_output
+/playwright-report
+/test-results
+/playwright/.cache
 
 # next.js
 /.next/
@@ -28,10 +34,10 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# local env files
+.env*.local
+.env
 
 # vercel
 .vercel
@@ -39,3 +45,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# vitest
+.vitest
+
+# e2e screenshots
+e2e/screenshots/

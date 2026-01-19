@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /** Ścieżki wymagające zalogowania */
-const protectedRoutes = []; //["/generator", "/biblioteka"];
+const protectedRoutes = ["/generator", "/biblioteka"];
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
