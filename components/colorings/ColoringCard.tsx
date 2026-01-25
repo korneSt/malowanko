@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Heart, Check } from "lucide-react";
+import { Heart, Check, Clock } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import type { ColoringDTO } from "@/app/types";
+import type { ColoringDTO, LibraryColoringDTO } from "@/app/types";
 
 // ============================================================================
 // Types
@@ -14,7 +14,7 @@ import type { ColoringDTO } from "@/app/types";
 
 interface ColoringCardProps {
   /** Coloring data to display */
-  coloring: ColoringDTO;
+  coloring: ColoringDTO | LibraryColoringDTO;
   /** Card variant determines available actions */
   variant: "gallery" | "library" | "generated";
   /** Whether the card is selected (for generated variant) */
@@ -59,7 +59,9 @@ export function ColoringCard({
   animate = false,
   className,
 }: ColoringCardProps) {
-  const [isImageLoading, setIsImageLoading] = useState(false);
+  // kept for potential future loading states
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [isImageLoading] = useState(false);
 
   const handleClick = () => {
     if (variant === "generated" && onSelect) {
@@ -84,6 +86,20 @@ export function ColoringCard({
 
   // Get max 3 tags for display
   const displayTags = coloring.tags.slice(0, 3);
+
+  const isLibraryVariant = variant === "library";
+  const libraryColoring = isLibraryVariant
+    ? (coloring as LibraryColoringDTO)
+    : null;
+
+  const addedAtLabel =
+    libraryColoring != null
+      ? new Date(libraryColoring.addedAt).toLocaleDateString("pl-PL", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })
+      : null;
 
   return (
     <article
@@ -131,25 +147,30 @@ export function ColoringCard({
         </div>
       )}
 
+      {/* Library favorite badge (for library variant) */}
+      {isLibraryVariant && libraryColoring?.isLibraryFavorite && (
+        <div
+          className="absolute right-3 top-3 z-10 flex items-center gap-1 rounded-full bg-primary/90 px-2 py-1 text-xs font-medium text-primary-foreground shadow-sm"
+          aria-label="Ulubione w bibliotece"
+        >
+          <Heart className="size-3 fill-current" aria-hidden="true" />
+          <span>Ulubione</span>
+        </div>
+      )}
+
       {/* Image Container */}
       <div className="relative aspect-square overflow-hidden bg-muted">
-        {/* Loading Skeleton */}
-        {isImageLoading && (
-          <div className="absolute inset-0 animate-pulse bg-muted" />
-        )}
-      <img src={coloring.imageUrl} alt={coloring.prompt} className="object-cover transition-all duration-300 group-hover:scale-105" />
-        {/* <Image
+        {/* Image */}
+        <Image
           src={coloring.imageUrl}
           alt={coloring.prompt}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
           className={cn(
             "object-cover transition-all duration-300",
-            "group-hover:scale-105",
-            { "opacity-0": isImageLoading, "opacity-100": !isImageLoading }
+            "group-hover:scale-105"
           )}
-          onLoad={() => setIsImageLoading(false)}
-        /> */}
+        />
 
         {/* Hover Overlay */}
         <div
@@ -196,6 +217,14 @@ export function ColoringCard({
           <span>{AGE_GROUP_LABELS[coloring.ageGroup]}</span>
           <span>{STYLE_LABELS[coloring.style]}</span>
         </div>
+
+        {/* Added date for library variant */}
+        {isLibraryVariant && addedAtLabel && (
+          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            <Clock className="size-3" aria-hidden="true" />
+            <span>Dodano {addedAtLabel}</span>
+          </div>
+        )}
       </div>
     </article>
   );
