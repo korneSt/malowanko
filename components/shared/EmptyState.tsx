@@ -157,8 +157,8 @@ export function EmptyState({
       )}
 
       {/* CTA Button */}
-      <Button  onClick={onAction} className="gap-2">
-        <Link href={config.ctaHref}>
+      <Button  onClick={onAction} className="gap-2 ">
+        <Link href={config.ctaHref} className="gap-2 inline-flex items-center justify-center">
           {variant === "limit" ? (
             <Palette className="size-4" aria-hidden="true" />
           ) : (

@@ -1,6 +1,7 @@
 "use server";
 
 import { AuthError } from "@supabase/supabase-js";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -170,9 +171,40 @@ function mapVerificationError(error: AuthError): {
 
 /**
  * Gets the app URL for redirects.
+ * 
+ * Priority:
+ * 1. NEXT_PUBLIC_APP_URL (manually configured)
+ * 2. Request headers (host from incoming request)
+ * 3. VERCEL_URL (automatically provided by Vercel)
+ * 4. localhost (development fallback)
  */
-function getAppUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+async function getAppUrl(): Promise<string> {
+  // 1. Check for manually configured URL
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
+  }
+
+  // 2. Try to get from request headers (works in server actions)
+  try {
+    const headersList = await headers();
+    const host = headersList.get("host");
+    const protocol = headersList.get("x-forwarded-proto") || "https";
+    
+    if (host) {
+      return `${protocol}://${host}`;
+    }
+  } catch {
+    // Headers might not be available in all contexts
+    // This is fine, we'll fall back to other methods
+  }
+
+  // 3. Use Vercel's automatically provided URL
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  // 4. Development fallback
+  return "http://localhost:3000";
 }
 
 // ============================================================================
@@ -238,7 +270,8 @@ export async function signUp(
 
     // 3. Send magic link for new user
     const supabase = await createClient();
-    const emailRedirectTo = `${getAppUrl()}/auth/verify${redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`;
+    const appUrl = await getAppUrl();
+    const emailRedirectTo = `${appUrl}/auth/verify${redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`;
 
     const { error } = await supabase.auth.signInWithOtp({
       email: validatedEmail,
@@ -324,7 +357,8 @@ export async function signIn(
 
     // 3. Send magic link for existing user
     const supabase = await createClient();
-    const emailRedirectTo = `${getAppUrl()}/auth/verify${redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`;
+    const appUrl = await getAppUrl();
+    const emailRedirectTo = `${appUrl}/auth/verify${redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`;
 
     const { error } = await supabase.auth.signInWithOtp({
       email: validatedEmail,
