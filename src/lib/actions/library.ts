@@ -54,9 +54,6 @@ import type { Database } from "@/app/db/database.types";
 export async function removeFromLibrary(
   coloringId: string
 ): Promise<ActionResultVoid> {
-  // =========================================================================
-  // 1. INPUT VALIDATION
-  // =========================================================================
   const validationResult = coloringIdSchema.safeParse(coloringId);
 
   if (!validationResult.success) {
@@ -72,9 +69,6 @@ export async function removeFromLibrary(
 
   const validatedId = validationResult.data;
 
-  // =========================================================================
-  // 2. AUTHENTICATION
-  // =========================================================================
   const supabase = await createClient();
   const {
     data: { user },
@@ -174,7 +168,7 @@ export async function removeFromLibrary(
     coloringId: validatedId,
   });
 
-  return createActionSuccess();
+  return createActionSuccess({});
 }
 
 /**

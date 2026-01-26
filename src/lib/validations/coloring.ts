@@ -14,7 +14,12 @@ import { z } from "zod";
  * Validates that the value is one of the allowed age groups.
  */
 export const ageGroupSchema = z.enum(["0-3", "4-8", "9-12"], {
-  errorMap: () => ({ message: "Nieprawidłowa grupa wiekowa" }),
+  error: (issue) => {
+    if (issue.code === "invalid_value") {
+      return "Nieprawidłowa grupa wiekowa";
+    }
+    return issue.message;
+  },
 });
 
 /**
@@ -24,7 +29,7 @@ export const ageGroupSchema = z.enum(["0-3", "4-8", "9-12"], {
 export const styleSchema = z.enum(
   ["prosty", "klasyczny", "szczegolowy", "mandala"],
   {
-    errorMap: () => ({ message: "Nieprawidłowy styl kolorowanki" }),
+    message: "Nieprawidłowy styl kolorowanki",
   }
 );
 
@@ -52,16 +57,9 @@ export const countSchema = z
  * - Automatically trimmed of leading/trailing whitespace
  */
 export const promptSchema = z
-  .string({
-    required_error: "Opis kolorowanki jest wymagany",
-    invalid_type_error: "Opis musi być tekstem",
-  })
+  .string({error: "Opis kolorowanki jest wymagany"})
   .min(1, "Opis kolorowanki jest wymagany")
-  .max(500, "Opis może mieć maksymalnie 500 znaków")
-  .transform((val) => val.trim())
-  .refine((val) => val.length > 0, {
-    message: "Opis kolorowanki nie może być pusty",
-  });
+  .max(500, "Opis może mieć maksymalnie 500 znaków");
 
 /**
  * Complete schema for coloring generation input.

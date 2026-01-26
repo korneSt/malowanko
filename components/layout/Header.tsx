@@ -33,8 +33,8 @@ export function Header({ user }: HeaderProps) {
   const pathname = usePathname();
 
   const visibleNavItems = navItems.filter((item) => {
-    // if (item.requiresAuth && !user) return false;
-    // if (item.guestOnly && user) return false;
+    if (item.requiresAuth && !user) return false;
+    if (item.guestOnly && user) return false;
     return true;
   });
 
@@ -69,11 +69,11 @@ export function Header({ user }: HeaderProps) {
             <ProfileDropdown user={user} />
           ) : (
             <div className="hidden items-center gap-2 md:flex">
-              <Button variant="ghost" asChild>
-                <Link href="/auth">Zaloguj się</Link>
+              <Button variant="ghost" >
+                <Link href="/auth?mode=signin">Zaloguj się</Link>
               </Button>
-              <Button asChild>
-                <Link href="/auth">Zarejestruj się</Link>
+              <Button >
+                <Link href="/auth?mode=signup">Zarejestruj się</Link>
               </Button>
             </div>
           )}

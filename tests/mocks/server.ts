@@ -5,12 +5,3 @@ import { handlers } from './handlers';
  * MSW server for Node.js environment (used in Vitest tests)
  */
 export const server = setupServer(...handlers);
-
-// Establish API mocking before all tests
-beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
-
-// Reset any request handlers that are declared as a part of our tests
-afterEach(() => server.resetHandlers());
-
-// Clean up after the tests are finished
-afterAll(() => server.close());

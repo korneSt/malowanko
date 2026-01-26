@@ -87,6 +87,9 @@ export const galleryQueryParamsSchema = z
     page: 1,
     limit: 20,
     sortBy: "newest",
+    search: undefined,
+    ageGroups: undefined,
+    styles: undefined,
   });
 
 /**

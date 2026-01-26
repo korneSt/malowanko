@@ -12,30 +12,16 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-// ============================================================================
-// Types
-// ============================================================================
-
 type EmptyStateVariant = "library" | "search" | "limit" | "gallery";
 
 interface EmptyStateProps {
-  /** Variant determines the message and CTA */
   variant: EmptyStateVariant;
-  /** Optional search query for search variant */
   searchQuery?: string;
-  /** Optional hours until limit reset for limit variant */
   hoursUntilReset?: number;
-  /** Optional suggested tags for search variant */
   suggestedTags?: string[];
-  /** Optional callback for action button */
   onAction?: () => void;
-  /** Additional CSS classes */
   className?: string;
 }
-
-// ============================================================================
-// Configuration
-// ============================================================================
 
 interface VariantConfig {
   icon: React.ElementType;
@@ -99,10 +85,6 @@ const DEFAULT_SUGGESTED_TAGS = [
   "kosmos",
   "dinozaury",
 ];
-
-// ============================================================================
-// Component
-// ============================================================================
 
 export function EmptyState({
   variant,
@@ -175,7 +157,7 @@ export function EmptyState({
       )}
 
       {/* CTA Button */}
-      <Button asChild onClick={onAction} className="gap-2">
+      <Button  onClick={onAction} className="gap-2">
         <Link href={config.ctaHref}>
           {variant === "limit" ? (
             <Palette className="size-4" aria-hidden="true" />

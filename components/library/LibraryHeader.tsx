@@ -12,40 +12,19 @@ import {
 } from "@/components/ui/select";
 import type { LibrarySortOrder } from "@/app/types";
 
-// ============================================================================
-// Types
-// ============================================================================
-
 interface LibraryHeaderProps {
-  /** Whether to show only favorites */
   favoritesOnly: boolean;
-  /** Current sort order */
   sortBy: LibrarySortOrder;
-  /** Callback when favorites filter is toggled */
   onFavoritesToggle: () => void;
-  /** Callback when sort order changes */
   onSortChange: (sortBy: LibrarySortOrder) => void;
-  /** Additional CSS classes */
   className?: string;
 }
-
-// ============================================================================
-// Constants
-// ============================================================================
 
 const SORT_OPTIONS = [
   { value: "added" as const, label: "Data dodania" },
   { value: "created" as const, label: "Data utworzenia" },
 ] as const;
 
-// ============================================================================
-// Component
-// ============================================================================
-
-/**
- * Header component for the library view.
- * Contains title, favorites filter toggle, and sort select.
- */
 export function LibraryHeader({
   favoritesOnly,
   sortBy,
@@ -53,9 +32,8 @@ export function LibraryHeader({
   onSortChange,
   className,
 }: LibraryHeaderProps) {
-  const handleSortChange = (value: string) => {
-    // Validate that value is a valid LibrarySortOrder
-    if (value === "added" || value === "created") {
+  const handleSortChange = (value: LibrarySortOrder | null) => {
+    if (value) {
       onSortChange(value);
     }
   };

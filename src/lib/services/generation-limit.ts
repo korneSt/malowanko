@@ -60,7 +60,7 @@ export async function checkAndReserveLimit(
       logger.error("Failed to check generation limit", {
         userId,
         count,
-        error: error.message,
+        error: error?.message,
       });
       // Fail closed - don't allow if we can't check
       return { allowed: false };
