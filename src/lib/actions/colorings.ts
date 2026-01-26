@@ -12,10 +12,8 @@
 
 "use server";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { createClient } from "@/app/db/server"; // Will be used when auth is implemented
+import { createClient } from "@/app/db/server";
 import { createAdminClient } from "@/app/db/admin";
-import { DEFAULT_USER_ID } from "@/app/db/client";
 import type {
   ActionResult,
   GenerateColoringInput,
@@ -89,17 +87,24 @@ export async function generateColorings(
 
   // =========================================================================
   // 2. AUTHENTICATION
-  // TODO: Replace with real auth when implemented
   // =========================================================================
-  // const supabase = await createClient();
-  // const { data: { user } } = await supabase.auth.getUser();
-  // if (!user) {
-  //   return createActionError(ERROR_CODES.UNAUTHORIZED, ERROR_MESSAGES.UNAUTHORIZED);
-  // }
-  // const userId = user.id;
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
-  const userId = DEFAULT_USER_ID;
-  logger.info("Using default user ID for development", { userId });
+  if (authError || !user) {
+    logger.warn("Unauthorized coloring generation attempt", {
+      error: authError?.message,
+    });
+    return createActionError(
+      ERROR_CODES.UNAUTHORIZED,
+      ERROR_MESSAGES.UNAUTHORIZED
+    );
+  }
+
+  const userId = user.id;
 
   // =========================================================================
   // 3. DAILY LIMIT CHECK
@@ -329,15 +334,26 @@ export async function getGenerationLimit(): Promise<
   ActionResult<GenerationLimitResult>
 > {
   try {
-    // TODO: Replace with real auth when implemented
-    // const supabase = await createClient();
-    // const { data: { user } } = await supabase.auth.getUser();
-    // if (!user) {
-    //   return createActionError(ERROR_CODES.UNAUTHORIZED, ERROR_MESSAGES.UNAUTHORIZED);
-    // }
-    // const userId = user.id;
+    // =========================================================================
+    // AUTHENTICATION
+    // =========================================================================
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    const userId = DEFAULT_USER_ID;
+    if (authError || !user) {
+      logger.warn("Unauthorized generation limit request", {
+        error: authError?.message,
+      });
+      return createActionError(
+        ERROR_CODES.UNAUTHORIZED,
+        ERROR_MESSAGES.UNAUTHORIZED
+      );
+    }
+
+    const userId = user.id;
 
     const remaining = await getRemainingGenerations(userId);
 
