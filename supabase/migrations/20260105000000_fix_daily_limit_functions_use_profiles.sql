@@ -1,8 +1,11 @@
--- Migration: Increase daily generation limit from 10 to 100
--- Date: 2026-01-04
--- Note: Daily limits are stored in profiles (generations_today, last_generation_date).
+-- Migration: Fix daily limit functions to use profiles (not user_limits)
+-- Date: 2026-01-05
+--
+-- Use this SQL to replace the broken functions that reference user_limits.
+-- Daily limits are stored in profiles (generations_today, last_generation_date).
+-- Copy-paste the blocks below into Supabase SQL Editor or run this migration.
 
--- Update check_and_update_daily_limit function
+-- Replace check_and_update_daily_limit (uses profiles, limit 100)
 create or replace function check_and_update_daily_limit(
     p_user_id uuid,
     p_count integer default 1
@@ -47,7 +50,7 @@ begin
 end;
 $$;
 
--- Update get_remaining_generations function
+-- Replace get_remaining_generations (uses profiles, limit 100)
 create or replace function get_remaining_generations(p_user_id uuid)
 returns integer
 language plpgsql
@@ -73,4 +76,3 @@ begin
     return greatest(0, v_daily_limit - v_generations_today);
 end;
 $$;
-

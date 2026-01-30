@@ -306,14 +306,20 @@ export async function generateImage(
       promptLength: options.prompt.length,
     });
 
+    // Seedream 4.5 has output_modalities: image only. Requesting ["image", "text"]
+    // causes 404 "No endpoints found that support the requested output modalities".
+    const modelId = options.model || OPENROUTER_CONFIG.models.image;
+    const modalities =
+      modelId === OPENROUTER_CONFIG.models.image ? ["image"] : ["image", "text"];
+
     const response = await fetch(
       `${OPENROUTER_CONFIG.baseUrl}/chat/completions`,
       {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify({
-          model: options.model || OPENROUTER_CONFIG.models.image,
-          modalities: ["image", "text"],
+          model: modelId,
+          modalities,
           messages: [
             {
               role: "system",
