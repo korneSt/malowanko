@@ -8,30 +8,15 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import type { ColoringDTO, LibraryColoringDTO } from "@/app/types";
 
-// ============================================================================
-// Types
-// ============================================================================
-
 interface ColoringCardProps {
-  /** Coloring data to display */
   coloring: ColoringDTO | LibraryColoringDTO;
-  /** Card variant determines available actions */
   variant: "gallery" | "library" | "generated";
-  /** Whether the card is selected (for generated variant) */
   isSelected?: boolean;
-  /** Callback when selection changes (for generated variant) */
   onSelect?: (selected: boolean) => void;
-  /** Callback when card is clicked (for preview) */
   onClick?: () => void;
-  /** Whether the card should animate on mount */
   animate?: boolean;
-  /** Additional CSS classes */
   className?: string;
 }
-
-// ============================================================================
-// Helpers
-// ============================================================================
 
 const AGE_GROUP_LABELS: Record<string, string> = {
   "0-3": "0-3 lata",
@@ -45,10 +30,6 @@ const STYLE_LABELS: Record<string, string> = {
   szczegolowy: "Szczegółowy",
   mandala: "Mandala",
 };
-
-// ============================================================================
-// Component
-// ============================================================================
 
 export function ColoringCard({
   coloring,

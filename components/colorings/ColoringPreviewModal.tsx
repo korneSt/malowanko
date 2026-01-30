@@ -21,27 +21,38 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import type { LibraryColoringDTO } from "@/app/types";
+import type {
+  GalleryColoringDTO,
+  LibraryColoringDTO,
+} from "@/app/types";
 
 // ============================================================================
 // Types
 // ============================================================================
 
+type PreviewColoring = LibraryColoringDTO | GalleryColoringDTO;
+
+function isLibraryColoring(
+  c: PreviewColoring
+): c is LibraryColoringDTO {
+  return "addedAt" in c && "isLibraryFavorite" in c;
+}
+
 interface ColoringPreviewModalProps {
-  /** Coloring data to display */
-  coloring: LibraryColoringDTO;
+  /** Coloring data to display (library or gallery) */
+  coloring: PreviewColoring;
   /** Whether the modal is open */
   isOpen: boolean;
   /** Callback when modal is closed */
   onClose: () => void;
   /** Callback when print is requested */
   onPrint: () => void;
-  /** Callback when library favorite is toggled */
-  onToggleLibraryFavorite: () => void;
+  /** Callback when library favorite is toggled (library only) */
+  onToggleLibraryFavorite?: () => void;
   /** Callback when global favorite is toggled */
-  onToggleGlobalFavorite: () => void;
-  /** Callback when delete is requested */
-  onDelete: () => void;
+  onToggleGlobalFavorite?: () => void;
+  /** Callback when delete is requested (library only) */
+  onDelete?: () => void;
 }
 
 // ============================================================================
@@ -91,7 +102,13 @@ export function ColoringPreviewModal({
   };
 
   const formattedCreatedAt = formatDate(coloring.createdAt);
-  const formattedAddedAt = formatDate(coloring.addedAt);
+  const isLibrary = isLibraryColoring(coloring);
+  const formattedAddedAt = isLibrary
+    ? formatDate(coloring.addedAt)
+    : null;
+  const isGlobalFavorite = isLibrary
+    ? coloring.isGlobalFavorite
+    : coloring.isFavorited ?? false;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -157,16 +174,18 @@ export function ColoringPreviewModal({
                   </div>
                 </div>
 
-                {/* Added Date */}
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="size-4 shrink-0" />
-                  <div>
-                    <div className="font-medium text-foreground">
-                      Data dodania
+                {/* Added Date (library only) */}
+                {isLibrary && formattedAddedAt != null && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="size-4 shrink-0" />
+                    <div>
+                      <div className="font-medium text-foreground">
+                        Data dodania
+                      </div>
+                      <div>{formattedAddedAt}</div>
                     </div>
-                    <div>{formattedAddedAt}</div>
                   </div>
-                </div>
+                )}
 
                 {/* Age Group */}
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -191,32 +210,34 @@ export function ColoringPreviewModal({
 
               {/* Favorite Status */}
               <div className="flex flex-wrap gap-4 rounded-lg border bg-muted/30 p-4">
+                {isLibrary && (
+                  <div className="flex items-center gap-2">
+                    <Heart
+                      className={cn(
+                        "size-4",
+                        coloring.isLibraryFavorite
+                          ? "fill-primary text-primary"
+                          : "text-muted-foreground"
+                      )}
+                    />
+                    <span className="text-sm">
+                      {coloring.isLibraryFavorite
+                        ? "Ulubione w bibliotece"
+                        : "Nie w ulubionych (biblioteka)"}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   <Heart
                     className={cn(
                       "size-4",
-                      coloring.isLibraryFavorite
+                      isGlobalFavorite
                         ? "fill-primary text-primary"
                         : "text-muted-foreground"
                     )}
                   />
                   <span className="text-sm">
-                    {coloring.isLibraryFavorite
-                      ? "Ulubione w bibliotece"
-                      : "Nie w ulubionych (biblioteka)"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Heart
-                    className={cn(
-                      "size-4",
-                      coloring.isGlobalFavorite
-                        ? "fill-primary text-primary"
-                        : "text-muted-foreground"
-                    )}
-                  />
-                  <span className="text-sm">
-                    {coloring.isGlobalFavorite
+                    {isGlobalFavorite
                       ? "Ulubione globalnie"
                       : "Nie w ulubionych (globalne)"}
                   </span>
@@ -244,52 +265,58 @@ export function ColoringPreviewModal({
                 Drukuj
               </Button>
 
-              {/* Library Favorite Toggle */}
-              <Button
-                type="button"
-                variant={coloring.isLibraryFavorite ? "default" : "outline"}
-                onClick={onToggleLibraryFavorite}
-                className="gap-2"
-              >
-                <Heart
-                  className={cn(
-                    "size-4",
-                    coloring.isLibraryFavorite && "fill-current"
-                  )}
-                />
-                {coloring.isLibraryFavorite
-                  ? "Usuń z ulubionych (biblioteka)"
-                  : "Dodaj do ulubionych (biblioteka)"}
-              </Button>
+              {/* Library Favorite Toggle (library only) */}
+              {onToggleLibraryFavorite && isLibrary && (
+                <Button
+                  type="button"
+                  variant={coloring.isLibraryFavorite ? "default" : "outline"}
+                  onClick={onToggleLibraryFavorite}
+                  className="gap-2"
+                >
+                  <Heart
+                    className={cn(
+                      "size-4",
+                      coloring.isLibraryFavorite && "fill-current"
+                    )}
+                  />
+                  {coloring.isLibraryFavorite
+                    ? "Usuń z ulubionych (biblioteka)"
+                    : "Dodaj do ulubionych (biblioteka)"}
+                </Button>
+              )}
 
               {/* Global Favorite Toggle */}
-              <Button
-                type="button"
-                variant={coloring.isGlobalFavorite ? "default" : "outline"}
-                onClick={onToggleGlobalFavorite}
-                className="gap-2"
-              >
-                <Heart
-                  className={cn(
-                    "size-4",
-                    coloring.isGlobalFavorite && "fill-current"
-                  )}
-                />
-                {coloring.isGlobalFavorite
-                  ? "Usuń z ulubionych (globalne)"
-                  : "Dodaj do ulubionych (globalne)"}
-              </Button>
+              {onToggleGlobalFavorite != null && (
+                <Button
+                  type="button"
+                  variant={isGlobalFavorite ? "default" : "outline"}
+                  onClick={onToggleGlobalFavorite}
+                  className="gap-2"
+                >
+                  <Heart
+                    className={cn(
+                      "size-4",
+                      isGlobalFavorite && "fill-current"
+                    )}
+                  />
+                  {isGlobalFavorite
+                    ? "Usuń z ulubionych (globalne)"
+                    : "Dodaj do ulubionych (globalne)"}
+                </Button>
+              )}
 
-              {/* Delete Button */}
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={onDelete}
-                className="gap-2"
-              >
-                <Trash2 className="size-4" />
-                Usuń
-              </Button>
+              {/* Delete Button (library only) */}
+              {onDelete != null && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={onDelete}
+                  className="gap-2"
+                >
+                  <Trash2 className="size-4" />
+                  Usuń
+                </Button>
+              )}
             </div>
           </DialogFooter>
         </div>

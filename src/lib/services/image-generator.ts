@@ -56,7 +56,7 @@ Target age: ${ageGroup} years old
 Style: ${STYLE_DESCRIPTIONS[style]}
 
 Requirements:
-- Pure black outlines on white background
+- Pure black outlines on transparent background (PNG format)
 - No shading, gradients, or filled areas
 - Clear, well-defined lines suitable for coloring
 - Complexity: ${AGE_ADJUSTMENTS[ageGroup]}

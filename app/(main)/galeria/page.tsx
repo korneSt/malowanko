@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getPublicGallery } from "@/src/lib/queries/gallery";
-import { ColoringCard } from "@/components/colorings";
+import { GalleryView } from "@/app/(main)/galeria/GalleryView";
 import { EmptyState } from "@/components/shared";
 import { LoadingSpinner } from "@/components/shared";
 import { logger } from "@/src/lib/utils/logger";
@@ -39,8 +39,11 @@ async function GalleryContent({ searchParams }: GaleriaPageProps) {
     : undefined;
   const sortBy = params.sortBy || "newest";
 
+  let result: Awaited<ReturnType<typeof getPublicGallery>> | null = null;
+  let fetchError: unknown = null;
+
   try {
-    const result = await getPublicGallery({
+    result = await getPublicGallery({
       page,
       limit,
       search,
@@ -48,47 +51,12 @@ async function GalleryContent({ searchParams }: GaleriaPageProps) {
       styles,
       sortBy,
     });
-
-    if (result.data.length === 0) {
-      return (
-        <EmptyState
-          variant="search"
-          searchQuery={search}
-        />
-      );
-    }
-
-    return (
-      <div className="space-y-6">
-        {/* Results count */}
-        <div className="text-sm text-muted-foreground">
-          Znaleziono {result.pagination.total} kolorowanek
-          {result.pagination.totalPages > 1 &&
-            ` (strona ${result.pagination.page} z ${result.pagination.totalPages})`}
-        </div>
-
-        {/* Gallery Grid */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {result.data.map((coloring) => (
-            <ColoringCard
-              key={coloring.id}
-              coloring={coloring}
-              variant="gallery"
-              animate
-            />
-          ))}
-        </div>
-
-        {/* Pagination info */}
-        {result.pagination.totalPages > 1 && (
-          <div className="text-center text-sm text-muted-foreground">
-            Strona {result.pagination.page} z {result.pagination.totalPages}
-          </div>
-        )}
-      </div>
-    );
   } catch (error) {
+    fetchError = error;
     logger.error("Failed to load gallery", { error });
+  }
+
+  if (fetchError) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-destructive/10">
@@ -101,6 +69,17 @@ async function GalleryContent({ searchParams }: GaleriaPageProps) {
       </div>
     );
   }
+
+  if (!result || result.data.length === 0) {
+    return (
+      <EmptyState
+        variant="search"
+        searchQuery={search}
+      />
+    );
+  }
+
+  return <GalleryView initialData={result} />;
 }
 
 export default async function GaleriaPage({ searchParams }: GaleriaPageProps) {
