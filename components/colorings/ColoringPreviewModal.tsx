@@ -114,7 +114,7 @@ export function ColoringPreviewModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         className={cn(
-          "max-w-2xl max-h-[85vh] overflow-hidden p-0 flex flex-col"
+          "max-w-4xl max-h-[85vh] overflow-hidden p-0 flex flex-col"
         )}
       >
         <div className="flex h-full flex-col overflow-hidden">
@@ -136,7 +136,7 @@ export function ColoringPreviewModal({
                 src={coloring.imageUrl}
                 alt={coloring.prompt}
                 className={cn(
-                  "h-full w-full object-contain transition-opacity duration-300",
+                  " w-full object-contain transition-opacity duration-300",
                   isImageLoading ? "opacity-0" : "opacity-100"
                 )}
                 onLoad={() => setIsImageLoading(false)}
