@@ -10,6 +10,7 @@ import {
   GeneratorForm,
   GeneratedGrid,
 } from "@/components/generator";
+import { ColoringPreviewModal, PrintModal } from "@/components/colorings";
 import { LoadingSpinner, EmptyState } from "@/components/shared";
 import {
   generateColorings,
@@ -41,6 +42,11 @@ export function GeneratorView() {
     isInitialized: false,
   });
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedColoring, setSelectedColoring] = useState<ColoringDTO | null>(
+    null
+  );
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [isLoadingLimit, setIsLoadingLimit] = useState(true);
   const [hoursUntilReset, setHoursUntilReset] = useState(24);
@@ -138,10 +144,32 @@ export function GeneratorView() {
     );
   }, [state.colorings]);
 
-  const handlePrintSelected = useCallback(() => {
-    // TODO: Implement print modal
-    toast.info("Funkcja drukowania będzie dostępna wkrótce!");
+  const handlePreviewClick = useCallback((coloring: ColoringDTO) => {
+    setSelectedColoring(coloring);
+    setIsPreviewModalOpen(true);
   }, []);
+
+  const handleClosePreview = useCallback(() => {
+    setIsPreviewModalOpen(false);
+    setSelectedColoring(null);
+  }, []);
+
+  const handlePrint = useCallback(() => {
+    setIsPrintModalOpen(true);
+  }, []);
+
+  const handleClosePrint = useCallback(() => {
+    setIsPrintModalOpen(false);
+  }, []);
+
+  const handlePrintSelected = useCallback(() => {
+    const firstSelectedId = Array.from(selectedIds)[0];
+    if (!firstSelectedId) return;
+    const coloring = state.colorings.find((c) => c.id === firstSelectedId);
+    if (!coloring) return;
+    setSelectedColoring(coloring);
+    setIsPrintModalOpen(true);
+  }, [selectedIds, state.colorings]);
 
   // Derived state
   const hasColorings = state.colorings.length > 0;
@@ -239,6 +267,7 @@ export function GeneratorView() {
             onSaveSelected={handleSaveSelected}
             onSaveAll={handleSaveAll}
             onPrintSelected={handlePrintSelected}
+            onPreviewClick={handlePreviewClick}
             onGenerateAgain={
               state.lastInput && state.remainingGenerations > 0
                 ? handleGenerateAgain
@@ -261,6 +290,25 @@ export function GeneratorView() {
             isLoading={isPending}
           />
         </div>
+      )}
+
+      {/* Preview Modal (same flow as gallery: preview then print) */}
+      {selectedColoring && (
+        <ColoringPreviewModal
+          coloring={selectedColoring}
+          isOpen={isPreviewModalOpen}
+          onClose={handleClosePreview}
+          onPrint={handlePrint}
+        />
+      )}
+
+      {/* Print Modal */}
+      {selectedColoring && (
+        <PrintModal
+          coloring={selectedColoring}
+          isOpen={isPrintModalOpen}
+          onClose={handleClosePrint}
+        />
       )}
     </div>
   );

@@ -22,6 +22,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import type {
+  ColoringDTO,
   GalleryColoringDTO,
   GalleryColoringListItem,
   LibraryColoringDTO,
@@ -34,6 +35,7 @@ import { useColoringImage } from "@/hooks/useColoringImage";
 // ============================================================================
 
 type PreviewColoring =
+  | ColoringDTO
   | LibraryColoringDTO
   | LibraryColoringListItem
   | GalleryColoringDTO
@@ -123,7 +125,7 @@ export function ColoringPreviewModal({
     : null;
   const isGlobalFavorite = isLibrary
     ? coloring.isGlobalFavorite
-    : coloring.isFavorited ?? false;
+    : ("isFavorited" in coloring ? coloring.isFavorited : false) ?? false;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

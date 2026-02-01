@@ -25,6 +25,8 @@ interface GeneratedGridProps {
   onSaveAll?: () => void;
   /** Callback when "Print selected" is clicked */
   onPrintSelected?: () => void;
+  /** Callback when preview is requested for a coloring (card expand icon) */
+  onPreviewClick?: (coloring: ColoringDTO) => void;
   /** Callback when "Generate again" is clicked */
   onGenerateAgain?: () => void;
   /** Whether any action is in progress */
@@ -44,6 +46,7 @@ export function GeneratedGrid({
   onSaveSelected,
   onSaveAll,
   onPrintSelected,
+  onPreviewClick,
   onGenerateAgain,
   isLoading = false,
   className,
@@ -200,6 +203,11 @@ export function GeneratedGrid({
             variant="generated"
             isSelected={selectedIds.has(coloring.id)}
             onSelect={(selected) => handleToggleSelection(coloring.id, selected)}
+            onClick={
+              onPreviewClick
+                ? (coloring) => onPreviewClick(coloring as ColoringDTO)
+                : undefined
+            }
             animate
             className={cn({
               // Stagger animation delay based on index

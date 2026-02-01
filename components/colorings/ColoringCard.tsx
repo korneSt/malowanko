@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Heart, Check, Clock } from "lucide-react";
+import { Heart, Check, Clock, Expand } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +69,12 @@ export function ColoringCard({
     }
   };
 
+  const handlePreviewClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onClick?.(coloring);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -133,6 +139,18 @@ export function ColoringCard({
         >
           {isSelected && <Check className="size-4" />}
         </div>
+      )}
+
+      {/* Preview button (for generated variant when onClick provided) */}
+      {variant === "generated" && onClick && (
+        <button
+          type="button"
+          onClick={handlePreviewClick}
+          className="absolute right-3 top-3 z-10 flex size-8 items-center justify-center rounded-full border border-white/80 bg-black/20 backdrop-blur-sm text-white transition-all hover:bg-black/40 hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label="Podgląd kolorowanki"
+        >
+          <Expand className="size-4" />
+        </button>
       )}
 
       {/* Favorites Count (for gallery variant) */}
