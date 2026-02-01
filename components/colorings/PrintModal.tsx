@@ -12,14 +12,20 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import type { ColoringDTO, PrintOrientation } from "@/app/types";
+import type {
+  ColoringDTO,
+  GalleryColoringListItem,
+  LibraryColoringListItem,
+  PrintOrientation,
+} from "@/app/types";
+import { useColoringImage } from "@/hooks/useColoringImage";
 
 // ============================================================================
 // Types
 // ============================================================================
 
 interface PrintModalProps {
-  coloring: ColoringDTO;
+  coloring: ColoringDTO | GalleryColoringListItem | LibraryColoringListItem;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -45,6 +51,13 @@ export function PrintModal({
   const [orientation, setOrientation] =
     useState<PrintOrientation>("portrait");
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const needLazyImage = coloring.imageUrl == null && isOpen;
+  const { imageUrl: lazyImageUrl } = useColoringImage(
+    needLazyImage ? coloring.id : undefined,
+    needLazyImage
+  );
+  const displayImageUrl = coloring.imageUrl ?? lazyImageUrl ?? null;
+  const hasImage = displayImageUrl != null;
 
   const handleOpenChange = (open: boolean) => {
     if (open) {
@@ -69,6 +82,7 @@ export function PrintModal({
   const scaledHeight = previewHeight * scale;
 
   const handlePrint = () => {
+    if (!hasImage || !displayImageUrl) return;
     const printStyles = `
       @media print {
         @page {
@@ -104,23 +118,38 @@ export function PrintModal({
     printContent.className = "print-content";
     printContent.innerHTML = `
       <img 
-        src="${coloring.imageUrl}" 
-        alt="${coloring.prompt}" 
+        src="${displayImageUrl}" 
+        alt="${coloring.prompt.replace(/"/g, "&quot;")}" 
         class="print-image"
       />
     `;
     document.body.appendChild(printContent);
 
-    window.print();
+    // Base64/data URLs load synchronously; external URLs need time to load before print
+    const printImg = printContent.querySelector("img");
+    if (printImg) {
+      const doPrint = () => {
+        window.print();
+        setTimeout(() => {
+          document.head.removeChild(styleElement);
+          document.body.removeChild(printContent);
+        }, 100);
+      };
+      if (printImg.complete && printImg.naturalWidth > 0) {
+        doPrint();
+      } else {
+        printImg.onload = doPrint;
+        printImg.onerror = doPrint;
+      }
+    } else {
+      window.print();
+      setTimeout(() => {
+        document.head.removeChild(styleElement);
+        document.body.removeChild(printContent);
+      }, 100);
+    }
 
-    setTimeout(() => {
-      document.head.removeChild(styleElement);
-      document.body.removeChild(printContent);
-    }, 100);
-
-    setTimeout(() => {
-      onClose();
-    }, 500);
+    setTimeout(() => onClose(), 500);
   };
 
   const handleOrientationToggle = () => {
@@ -152,18 +181,24 @@ export function PrintModal({
                 height: `${scaledHeight}px`,
               }}
             >
-              {!isImageLoaded && (
+              {(!hasImage || !isImageLoaded) && (
                 <div className="absolute inset-0 animate-pulse bg-muted" />
               )}
-              <img
-                src={coloring.imageUrl}
-                alt={coloring.prompt}
-                className={cn(
-                  "max-w-full max-h-full object-contain transition-opacity duration-300",
-                  isImageLoaded ? "opacity-100" : "opacity-0"
-                )}
-                onLoad={() => setIsImageLoaded(true)}
-              />
+              {hasImage ? (
+                <img
+                  src={displayImageUrl}
+                  alt={coloring.prompt}
+                  className={cn(
+                    "max-w-full max-h-full object-contain transition-opacity duration-300",
+                    isImageLoaded ? "opacity-100" : "opacity-0"
+                  )}
+                  onLoad={() => setIsImageLoaded(true)}
+                />
+              ) : (
+                <span className="text-sm text-muted-foreground">
+                  Ładowanie…
+                </span>
+              )}
             </div>
 
             {/* Orientation Toggle */}
@@ -198,7 +233,7 @@ export function PrintModal({
                 type="button"
                 onClick={handlePrint}
                 className="gap-2"
-                disabled={!isImageLoaded}
+                disabled={!hasImage || !isImageLoaded}
               >
                 <Printer className="size-4" />
                 Drukuj

@@ -1,7 +1,8 @@
+import { Suspense } from "react";
 import { createClient } from "@/app/db/server";
 import { MainLayout } from "@/components/layout";
 
-export default async function MainGroupLayout({
+async function MainLayoutWithUser({
   children,
 }: {
   children: React.ReactNode;
@@ -12,5 +13,17 @@ export default async function MainGroupLayout({
   } = await supabase.auth.getUser();
 
   return <MainLayout user={user}>{children}</MainLayout>;
+}
+
+export default function MainGroupLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <Suspense fallback={<MainLayout user={null}>{children}</MainLayout>}>
+      <MainLayoutWithUser>{children}</MainLayoutWithUser>
+    </Suspense>
+  );
 }
 

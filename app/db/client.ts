@@ -9,4 +9,3 @@ export function createClient() {
   );
 }
 
-export const DEFAULT_USER_ID = "35e10ebe-6eed-4f09-9112-1afc4dc90b72";

@@ -1,37 +1,52 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
-import type { GalleryColoringDTO } from "@/app/types";
+import type { GalleryColoringDTO, GalleryColoringListItem } from "@/app/types";
 import type { PaginatedResponse } from "@/app/types";
 import { ColoringCard } from "@/components/colorings";
 import { ColoringPreviewModal } from "@/components/colorings/ColoringPreviewModal";
 import { PrintModal } from "@/components/colorings/PrintModal";
+import { LibraryPagination } from "@/components/library/LibraryPagination";
 import { toggleGlobalFavorite } from "@/src/lib/actions/favorites";
 
 interface GalleryViewProps {
-  /** Initial gallery data from server */
-  initialData: PaginatedResponse<GalleryColoringDTO>;
+  /** Initial gallery data from server (list items without image_url; images load on demand) */
+  initialData: PaginatedResponse<GalleryColoringListItem>;
+}
+
+/**
+ * Builds gallery URL with given page, preserving current search/filter params.
+ */
+function buildGalleryUrl(searchParams: URLSearchParams, page: number): string {
+  const params = new URLSearchParams(searchParams);
+  params.set("page", String(page));
+  const query = params.toString();
+  return query ? `/galeria?${query}` : `/galeria?page=${page}`;
 }
 
 /**
  * Client component for the public gallery.
- * Renders the grid with click-to-preview and print (same flow as library).
+ * Renders the grid with click-to-preview, print, and pagination (URL-based).
  */
 export function GalleryView({ initialData }: GalleryViewProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedColoring, setSelectedColoring] =
-    useState<GalleryColoringDTO | null>(null);
+    useState<GalleryColoringDTO | GalleryColoringListItem | null>(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleCardClick = useCallback((coloring: GalleryColoringDTO) => {
-    setSelectedColoring(coloring);
-    setIsPreviewModalOpen(true);
-  }, []);
+  const handleCardClick = useCallback(
+    (coloring: GalleryColoringDTO | GalleryColoringListItem) => {
+      setSelectedColoring(coloring);
+      setIsPreviewModalOpen(true);
+    },
+    []
+  );
 
   const handleClosePreview = useCallback(() => {
     setIsPreviewModalOpen(false);
@@ -67,6 +82,13 @@ export function GalleryView({ initialData }: GalleryViewProps) {
     }
   }, [selectedColoring, router]);
 
+  const handlePageChange = useCallback(
+    (page: number) => {
+      router.push(buildGalleryUrl(searchParams, page));
+    },
+    [router, searchParams]
+  );
+
   return (
     <div className="space-y-6">
       {/* Results count */}
@@ -84,18 +106,17 @@ export function GalleryView({ initialData }: GalleryViewProps) {
             coloring={coloring}
             variant="gallery"
             animate
-            onClick={() => handleCardClick(coloring)}
+            onClick={handleCardClick}
           />
         ))}
       </div>
 
-      {/* Pagination info */}
-      {initialData.pagination.totalPages > 1 && (
-        <div className="text-center text-sm text-muted-foreground">
-          Strona {initialData.pagination.page} z{" "}
-          {initialData.pagination.totalPages}
-        </div>
-      )}
+      {/* Pagination */}
+      <LibraryPagination
+        currentPage={initialData.pagination.page}
+        totalPages={initialData.pagination.totalPages}
+        onPageChange={handlePageChange}
+      />
 
       {/* Preview Modal (same as library: preview then print) */}
       {selectedColoring && (

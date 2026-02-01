@@ -18,7 +18,7 @@ const OPENROUTER_CONFIG = {
   baseUrl: "https://openrouter.ai/api/v1",
   models: {
     text: "openai/gpt-4o-mini", // Cheap model for text (moderation, tags)
-    image: "bytedance-seed/seedream-4.5", // Seedream 4.5 for image generation ($0.04/image)
+    image: "google/gemini-2.5-flash-image",//"bytedance-seed/seedream-4.5", // Seedream 4.5 for image generation ($0.04/image)
   },
   timeout: {
     text: 15000, // 15s for text operations

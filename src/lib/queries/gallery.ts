@@ -11,6 +11,7 @@ import { createClient } from "@/app/db/server";
 import type {
   GalleryQueryParams,
   GalleryColoringDTO,
+  GalleryColoringListItem,
   PaginatedResponse,
   AgeGroup,
   ColoringStyle,
@@ -25,6 +26,9 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type ColoringRow = Database["public"]["Tables"]["colorings"]["Row"];
+
+/** Row shape when selecting gallery list without image_url (avoids loading base64). */
+type ColoringListRow = Omit<ColoringRow, "image_url">;
 
 /**
  * Normalizes and validates gallery query parameters.
@@ -52,9 +56,35 @@ function normalizeGalleryParams(
   return result.data;
 }
 
+/** Columns selected for gallery list (excludes image_url to avoid loading base64). */
+const GALLERY_LIST_COLUMNS =
+  "id, prompt, tags, age_group, style, created_at, favorites_count, user_id" as const;
+
 /**
- * Maps a database coloring row to GalleryColoringDTO.
- * Transforms snake_case fields to camelCase and adds favorite status.
+ * Maps a gallery list row (no image_url) to GalleryColoringListItem.
+ *
+ * @param coloring - Database row without image_url
+ * @param isFavorited - Whether the coloring is favorited by current user
+ * @returns GalleryColoringListItem (imageUrl omitted, loaded separately)
+ */
+function mapColoringToListDTO(
+  coloring: ColoringListRow,
+  isFavorited?: boolean
+): GalleryColoringListItem {
+  return {
+    id: coloring.id,
+    prompt: coloring.prompt,
+    tags: coloring.tags,
+    ageGroup: coloring.age_group as AgeGroup,
+    style: coloring.style as ColoringStyle,
+    createdAt: coloring.created_at,
+    favoritesCount: coloring.favorites_count,
+    ...(isFavorited !== undefined && { isFavorited }),
+  };
+}
+
+/**
+ * Maps a full database coloring row to GalleryColoringDTO (includes imageUrl).
  *
  * @param coloring - Database row from colorings table
  * @param isFavorited - Whether the coloring is favorited by current user
@@ -90,7 +120,7 @@ function buildGalleryQuery(
 ) {
   let query = supabase
     .from("colorings")
-    .select("*", { count: "exact" });
+    .select(GALLERY_LIST_COLUMNS, { count: "exact" });
 
   // Filtrowanie po grupach wiekowych
   if (params.ageGroups && params.ageGroups.length > 0) {
@@ -216,7 +246,7 @@ async function getUserId(
  */
 export async function getPublicGallery(
   params: Partial<GalleryQueryParams>
-): Promise<PaginatedResponse<GalleryColoringDTO>> {
+): Promise<PaginatedResponse<GalleryColoringListItem>> {
   // 1. Walidacja i normalizacja parametrów
   const validatedParams = normalizeGalleryParams(params);
   const { page, limit } = validatedParams;
@@ -249,10 +279,10 @@ export async function getPublicGallery(
   // 7. Pobranie ulubionych (dla zalogowanych użytkowników)
   const favoriteIds = await getFavoriteIds(supabase, userId);
 
-  // 8. Mapowanie wyników do DTO
-  const data: GalleryColoringDTO[] = (colorings ?? []).map((coloring) =>
-    mapColoringToDTO(
-      coloring,
+  // 8. Mapowanie wyników do list DTO (bez image_url; obrazy ładowane osobno)
+  const data: GalleryColoringListItem[] = (colorings ?? []).map((coloring) =>
+    mapColoringToListDTO(
+      coloring as ColoringListRow,
       userId ? favoriteIds.has(coloring.id) : undefined
     )
   );

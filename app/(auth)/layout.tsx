@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { AuthFooter } from "@/components/layout/AuthFooter";
 import { Logo } from "@/components/layout/Logo";
 
 export default function AuthLayout({
@@ -21,15 +23,28 @@ export default function AuthLayout({
           <Logo />
         </div>
 
-        {/* Content */}
+        {/* Content - wrapped in Suspense so cookie/headers access doesn't block the route */}
         <main id="auth-content" className="flex-1">
-          {children}
+          <Suspense
+            fallback={
+              <div className="flex flex-1 items-center justify-center py-12">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              </div>
+            }
+          >
+            {children}
+          </Suspense>
         </main>
 
-        {/* Footer */}
-        <footer className="mt-8 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Malowanko. Wszystkie prawa zastrzeżone.</p>
-        </footer>
+        <Suspense
+          fallback={
+            <footer className="mt-8 text-center text-sm text-muted-foreground">
+              <p>&copy; Malowanko. Wszystkie prawa zastrzeżone.</p>
+            </footer>
+          }
+        >
+          <AuthFooter />
+        </Suspense>
       </div>
     </div>
   );

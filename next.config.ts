@@ -21,6 +21,7 @@ const getSupabaseConfig = () => {
 };
 
 const nextConfig: NextConfig = {
+  cacheComponents: true,
   images: {
     remotePatterns: [
       // Supabase Storage (local development - 127.0.0.1)

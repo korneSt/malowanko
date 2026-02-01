@@ -1,19 +1,30 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import { Heart, Check, Clock } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import type { ColoringDTO, LibraryColoringDTO } from "@/app/types";
+import type {
+  ColoringDTO,
+  LibraryColoringDTO,
+  GalleryColoringListItem,
+} from "@/app/types";
+import { useInView } from "@/hooks/useInView";
+import { useColoringImage } from "@/hooks/useColoringImage";
+
+type ColoringCardColoring =
+  | ColoringDTO
+  | LibraryColoringDTO
+  | GalleryColoringListItem;
 
 interface ColoringCardProps {
-  coloring: ColoringDTO | LibraryColoringDTO;
+  coloring: ColoringCardColoring;
   variant: "gallery" | "library" | "generated";
   isSelected?: boolean;
   onSelect?: (selected: boolean) => void;
-  onClick?: () => void;
+  /** Called when card is clicked (gallery/library). Receives the coloring. */
+  onClick?: (coloring: ColoringCardColoring) => void;
   animate?: boolean;
   className?: string;
 }
@@ -40,15 +51,21 @@ export function ColoringCard({
   animate = false,
   className,
 }: ColoringCardProps) {
-  // kept for potential future loading states
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [isImageLoading] = useState(false);
+  const [inViewRef, inView] = useInView<HTMLElement>({ rootMargin: "200px" });
+  const needLazyImage =
+    (variant === "gallery" || variant === "library") &&
+    coloring.imageUrl === undefined;
+  const { imageUrl: lazyImageUrl } = useColoringImage(
+      needLazyImage ? coloring.id : undefined,
+      needLazyImage && inView
+    );
+  const displayImageUrl = coloring.imageUrl ?? lazyImageUrl ?? null;
 
   const handleClick = () => {
     if (variant === "generated" && onSelect) {
       onSelect(!isSelected);
     } else if (onClick) {
-      onClick();
+      onClick(coloring);
     }
   };
 
@@ -84,6 +101,7 @@ export function ColoringCard({
 
   return (
     <article
+      ref={inViewRef}
       role={variant === "generated" ? "checkbox" : "button"}
       aria-checked={variant === "generated" ? isSelected : undefined}
       aria-label={`Kolorowanka: ${coloring.prompt}`}
@@ -141,17 +159,23 @@ export function ColoringCard({
 
       {/* Image Container */}
       <div className="relative aspect-square overflow-hidden bg-muted">
-        {/* Image */}
-        <Image
-          src={coloring.imageUrl}
-          alt={coloring.prompt}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          className={cn(
-            "object-cover transition-all duration-300",
-            "group-hover:scale-105"
-          )}
-        />
+        {displayImageUrl ? (
+          <Image
+            src={displayImageUrl}
+            alt={coloring.prompt}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className={cn(
+              "object-cover transition-all duration-300",
+              "group-hover:scale-105"
+            )}
+          />
+        ) : (
+          <div
+            className="absolute inset-0 animate-pulse bg-muted-foreground/10"
+            aria-hidden
+          />
+        )}
 
         {/* Hover Overlay */}
         <div

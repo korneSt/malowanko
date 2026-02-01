@@ -202,6 +202,15 @@ export interface GalleryColoringDTO extends ColoringDTO {
 }
 
 /**
+ * Gallery list item: same as GalleryColoringDTO but imageUrl is optional.
+ * Used when listing gallery without fetching heavy base64 images; images are
+ * loaded separately (e.g. on demand when card enters viewport).
+ */
+export type GalleryColoringListItem = Omit<GalleryColoringDTO, "imageUrl"> & {
+  imageUrl?: string;
+};
+
+/**
  * Coloring DTO for user's personal library.
  * Includes both library-specific and global favorite status.
  *
@@ -215,6 +224,15 @@ export interface LibraryColoringDTO extends ColoringDTO {
   /** Whether this coloring is globally favorited by the user */
   isGlobalFavorite: boolean;
 }
+
+/**
+ * Library list item: same as LibraryColoringDTO but imageUrl is optional.
+ * Used when listing library without fetching heavy base64 images; images are
+ * loaded separately (e.g. on demand when card enters viewport).
+ */
+export type LibraryColoringListItem = Omit<LibraryColoringDTO, "imageUrl"> & {
+  imageUrl?: string;
+};
 
 // ============================================================================
 // 4. Command Models (Input DTOs)

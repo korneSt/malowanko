@@ -1,3 +1,4 @@
+export { AuthFooter } from "./AuthFooter";
 export { Header } from "./Header";
 export { BottomNav } from "./BottomNav";
 export { Logo } from "./Logo";

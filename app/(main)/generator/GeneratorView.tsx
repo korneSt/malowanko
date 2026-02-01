@@ -16,7 +16,6 @@ import {
   getGenerationLimit,
 } from "@/src/lib/actions/colorings";
 import type { ColoringDTO, GenerateColoringInput } from "@/app/types";
-import { DAILY_LIMIT } from "@/src/lib/services/generation-limit";
 
 // ============================================================================
 // Types
@@ -44,6 +43,18 @@ export function GeneratorView() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
   const [isLoadingLimit, setIsLoadingLimit] = useState(true);
+  const [hoursUntilReset, setHoursUntilReset] = useState(24);
+
+  // Compute hours until reset after mount (avoids new Date() during prerender)
+  useEffect(() => {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    setHoursUntilReset(
+      Math.ceil((tomorrow.getTime() - now.getTime()) / (1000 * 60 * 60))
+    );
+  }, []);
 
   // Fetch initial limit on mount
   useEffect(() => {
@@ -135,15 +146,6 @@ export function GeneratorView() {
   // Derived state
   const hasColorings = state.colorings.length > 0;
   const isLimitExhausted = state.remainingGenerations === 0;
-
-  // Calculate hours until reset
-  const hoursUntilReset = (() => {
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-    return Math.ceil((tomorrow.getTime() - now.getTime()) / (1000 * 60 * 60));
-  })();
 
   // Loading state for initial limit fetch
   if (isLoadingLimit) {

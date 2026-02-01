@@ -11,6 +11,7 @@ import { createClient } from "@/app/db/server";
 import type {
   LibraryQueryParams,
   LibraryColoringDTO,
+  LibraryColoringListItem,
   PaginatedResponse,
   AgeGroup,
   ColoringStyle,
@@ -25,6 +26,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 type UserLibraryViewRow =
   Database["public"]["Views"]["user_library_view"]["Row"];
+
+type UserLibraryListRow = Omit<UserLibraryViewRow, "image_url">;
+
+const LIBRARY_LIST_COLUMNS =
+  "added_at, age_group, coloring_id, created_at, favorites_count, is_global_favorite, library_favorite, prompt, style, tags, user_id" as const;
 
 /**
  * Normalizes and validates library query parameters.
@@ -54,18 +60,17 @@ function normalizeLibraryParams(
 }
 
 /**
- * Maps a database user_library_view row to LibraryColoringDTO.
- * Transforms snake_case fields to camelCase and handles null values.
+ * Maps a library list row (no image_url) to LibraryColoringListItem.
  *
- * @param row - Database row from user_library_view
- * @returns LibraryColoringDTO with transformed fields
+ * @param row - Database row from user_library_view without image_url
+ * @returns LibraryColoringListItem (imageUrl omitted, loaded separately)
  * @throws Error if required fields are null
  */
-function mapLibraryRowToDTO(row: UserLibraryViewRow): LibraryColoringDTO {
-  // Validate required fields are not null
+function mapLibraryRowToListDTO(
+  row: UserLibraryListRow
+): LibraryColoringListItem {
   if (
     !row.coloring_id ||
-    !row.image_url ||
     !row.prompt ||
     !row.age_group ||
     !row.style ||
@@ -81,7 +86,6 @@ function mapLibraryRowToDTO(row: UserLibraryViewRow): LibraryColoringDTO {
 
   return {
     id: row.coloring_id,
-    imageUrl: row.image_url,
     prompt: row.prompt,
     tags: row.tags ?? [],
     ageGroup: row.age_group as AgeGroup,
@@ -109,7 +113,7 @@ function buildLibraryQuery(
 ) {
   let query = supabase
     .from("user_library_view")
-    .select("*", { count: "exact" })
+    .select(LIBRARY_LIST_COLUMNS, { count: "exact" })
     .eq("user_id", userId);
 
   // Filtrowanie po ulubionych w bibliotece
@@ -184,7 +188,7 @@ async function getUserId(
  */
 export async function getUserLibrary(
   params: Partial<LibraryQueryParams>
-): Promise<PaginatedResponse<LibraryColoringDTO>> {
+): Promise<PaginatedResponse<LibraryColoringListItem>> {
   // 1. Walidacja i normalizacja parametrów
   const validatedParams = normalizeLibraryParams(params);
   const { page, limit } = validatedParams;
@@ -215,9 +219,9 @@ export async function getUserLibrary(
     throw new Error("Nie udało się pobrać biblioteki.");
   }
 
-  // 7. Mapowanie wyników do DTO
-  const data: LibraryColoringDTO[] = (rows ?? []).map((row) =>
-    mapLibraryRowToDTO(row)
+  // 7. Mapowanie wyników do list DTO (bez image_url; obrazy ładowane osobno)
+  const data: LibraryColoringListItem[] = (rows ?? []).map((row) =>
+    mapLibraryRowToListDTO(row as UserLibraryListRow)
   );
 
   // 8. Zwrócenie wyniku

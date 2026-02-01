@@ -4,17 +4,17 @@ import { cn } from "@/lib/utils";
 import { ColoringCard } from "@/components/colorings/ColoringCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
-import type { LibraryColoringDTO } from "@/app/types";
+import type { LibraryColoringListItem } from "@/app/types";
 
 // ============================================================================
 // Types
 // ============================================================================
 
 interface LibraryGridProps {
-  /** Array of colorings to display */
-  colorings: LibraryColoringDTO[];
+  /** Array of colorings to display (list items without image_url; images load on demand) */
+  colorings: LibraryColoringListItem[];
   /** Callback when a card is clicked */
-  onCardClick: (coloring: LibraryColoringDTO) => void;
+  onCardClick: (coloring: LibraryColoringListItem) => void;
   /** Whether the grid is in loading state */
   isLoading?: boolean;
   /** Additional CSS classes */
@@ -69,7 +69,7 @@ export function LibraryGrid({
           key={coloring.id}
           coloring={coloring}
           variant="library"
-          onClick={() => onCardClick(coloring)}
+          onClick={(c) => onCardClick(c as LibraryColoringListItem)}
         />
       ))}
     </div>

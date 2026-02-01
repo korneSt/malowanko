@@ -6,20 +6,19 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogMedia,
   AlertDialogTitle,
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import type { LibraryColoringDTO } from "@/app/types";
+import type { LibraryColoringDTO, LibraryColoringListItem } from "@/app/types";
 
 // ============================================================================
 // Types
 // ============================================================================
 
 interface DeleteConfirmDialogProps {
-  /** Coloring data to delete */
-  coloring: LibraryColoringDTO;
+  /** Coloring data to delete (list item or full DTO) */
+  coloring: LibraryColoringDTO | LibraryColoringListItem;
   /** Whether the dialog is open */
   isOpen: boolean;
   /** Callback when deletion is confirmed */
@@ -34,7 +33,7 @@ interface DeleteConfirmDialogProps {
 
 /**
  * Dialog component for confirming deletion of a coloring from library.
- * Shows thumbnail and prompt for user confirmation.
+ * Shows prompt for user confirmation.
  */
 export function DeleteConfirmDialog({
   coloring,
@@ -46,16 +45,6 @@ export function DeleteConfirmDialog({
     <AlertDialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
       <AlertDialogContent size="default">
         <AlertDialogHeader>
-          <AlertDialogMedia>
-            {/* Thumbnail */}
-            <div className="relative aspect-square w-full max-w-[120px] overflow-hidden rounded-lg">
-              <img
-                src={coloring.imageUrl}
-                alt={coloring.prompt}
-                className="h-full w-full object-cover"
-              />
-            </div>
-          </AlertDialogMedia>
           <AlertDialogTitle>Usuń kolorowankę z biblioteki?</AlertDialogTitle>
           <AlertDialogDescription>
             Ta kolorowanka zostanie usunięta z Twojej biblioteki, ale pozostanie

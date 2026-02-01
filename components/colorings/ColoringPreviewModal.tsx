@@ -23,18 +23,25 @@ import {
 } from "@/components/ui/dialog";
 import type {
   GalleryColoringDTO,
+  GalleryColoringListItem,
   LibraryColoringDTO,
+  LibraryColoringListItem,
 } from "@/app/types";
+import { useColoringImage } from "@/hooks/useColoringImage";
 
 // ============================================================================
 // Types
 // ============================================================================
 
-type PreviewColoring = LibraryColoringDTO | GalleryColoringDTO;
+type PreviewColoring =
+  | LibraryColoringDTO
+  | LibraryColoringListItem
+  | GalleryColoringDTO
+  | GalleryColoringListItem;
 
 function isLibraryColoring(
   c: PreviewColoring
-): c is LibraryColoringDTO {
+): c is LibraryColoringDTO | LibraryColoringListItem {
   return "addedAt" in c && "isLibraryFavorite" in c;
 }
 
@@ -90,6 +97,14 @@ export function ColoringPreviewModal({
   onDelete,
 }: ColoringPreviewModalProps) {
   const [isImageLoading, setIsImageLoading] = useState(true);
+  const needLazyImage = coloring.imageUrl == null && isOpen;
+  const { imageUrl: lazyImageUrl, isLoading: isLazyLoading } = useColoringImage(
+    needLazyImage ? coloring.id : undefined,
+    needLazyImage
+  );
+  const displayImageUrl = coloring.imageUrl ?? lazyImageUrl ?? null;
+  const hasImage = displayImageUrl != null;
+  const showImageLoading = (!hasImage && needLazyImage && isLazyLoading) || (hasImage && isImageLoading);
 
   // Format dates
   const formatDate = (dateString: string): string => {
@@ -127,20 +142,26 @@ export function ColoringPreviewModal({
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 min-h-0">
-            {/* Image */}
+            {/* Image (uses same useColoringImage cache as card – no refetch when opening from loaded card) */}
             <div className="relative mb-6 aspect-square w-full overflow-hidden rounded-2xl bg-muted">
-              {isImageLoading && (
+              {(showImageLoading || !hasImage) && (
                 <div className="absolute inset-0 animate-pulse bg-muted" />
               )}
-              <img
-                src={coloring.imageUrl}
-                alt={coloring.prompt}
-                className={cn(
-                  " w-full object-contain transition-opacity duration-300",
-                  isImageLoading ? "opacity-0" : "opacity-100"
-                )}
-                onLoad={() => setIsImageLoading(false)}
-              />
+              {hasImage ? (
+                <img
+                  src={displayImageUrl}
+                  alt={coloring.prompt}
+                  className={cn(
+                    "w-full object-contain transition-opacity duration-300",
+                    isImageLoading ? "opacity-0" : "opacity-100"
+                  )}
+                  onLoad={() => setIsImageLoading(false)}
+                />
+              ) : needLazyImage ? (
+                <div className="flex absolute inset-0 items-center justify-center text-sm text-muted-foreground">
+                  Ładowanie…
+                </div>
+              ) : null}
             </div>
 
             {/* Metadata */}

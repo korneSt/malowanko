@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 import type {
-  LibraryColoringDTO,
+  LibraryColoringListItem,
   LibraryQueryParams,
   PaginatedResponse,
   LibrarySortOrder,
@@ -24,8 +24,8 @@ import { toggleGlobalFavorite } from "@/src/lib/actions/favorites";
 // ============================================================================
 
 interface LibraryViewProps {
-  /** Initial data from server */
-  initialData: PaginatedResponse<LibraryColoringDTO>;
+  /** Initial data from server (list items without image_url; images load on demand) */
+  initialData: PaginatedResponse<LibraryColoringListItem>;
   /** Initial query parameters */
   initialParams: LibraryQueryParams;
 }
@@ -47,14 +47,14 @@ export function LibraryView({
 
   // Local state for modals and selected coloring
   const [selectedColoring, setSelectedColoring] =
-    useState<LibraryColoringDTO | null>(null);
+    useState<LibraryColoringListItem | null>(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // Local state for optimistic updates
-  const [colorings, setColorings] = useState<LibraryColoringDTO[]>(
+  const [colorings, setColorings] = useState<LibraryColoringListItem[]>(
     initialData.data
   );
   const [pagination, setPagination] = useState(initialData.pagination);
@@ -131,10 +131,13 @@ export function LibraryView({
   );
 
   // Handlers for card interactions
-  const handleCardClick = useCallback((coloring: LibraryColoringDTO) => {
-    setSelectedColoring(coloring);
-    setIsPreviewModalOpen(true);
-  }, []);
+  const handleCardClick = useCallback(
+    (coloring: LibraryColoringListItem) => {
+      setSelectedColoring(coloring);
+      setIsPreviewModalOpen(true);
+    },
+    []
+  );
 
   // Handlers for modal actions
   const handlePrint = useCallback(() => {
